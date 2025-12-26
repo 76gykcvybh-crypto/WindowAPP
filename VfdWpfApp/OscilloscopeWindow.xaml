@@ -41,12 +41,16 @@
         </DataGrid>
 
         <Grid Grid.Row="3" Margin="0,8,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="260"/>
+            </Grid.ColumnDefinitions>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
 
-            <ItemsControl Grid.Row="0" ItemsSource="{Binding ChartSeries}">
+            <ItemsControl Grid.Row="0" Grid.Column="0" ItemsSource="{Binding ChartSeries}">
                 <ItemsControl.ItemsPanel>
                     <ItemsPanelTemplate>
                         <StackPanel Orientation="Horizontal" />
@@ -62,7 +66,34 @@
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
 
-            <Grid Grid.Row="1" Margin="0,8,0,0">
+            <Border Grid.Row="0" Grid.Column="1" Grid.RowSpan="2" Margin="12,0,0,0"
+                    BorderBrush="#DDD" BorderThickness="1" CornerRadius="6" Padding="10">
+                <StackPanel>
+                    <TextBlock FontWeight="SemiBold" Text="Per-series scale" />
+                    <ItemsControl ItemsSource="{Binding SeriesScaleLabels}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Margin="0,6,0,0">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Rectangle Width="12" Height="12" Fill="{Binding Stroke}" Margin="0,0,6,0"/>
+                                        <TextBlock Text="{Binding Label}" />
+                                    </StackPanel>
+                                    <TextBlock Foreground="#666" FontSize="12"
+                                               Text="{Binding Scale, StringFormat=Scale: {0:0.###}}"/>
+                                    <TextBlock Foreground="#666" FontSize="12"
+                                               Text="{Binding Offset, StringFormat=Offset: {0:0.###}}"/>
+                                    <TextBlock Foreground="#666" FontSize="12"
+                                               Text="{Binding Min, StringFormat=Min: {0:0.##}}"/>
+                                    <TextBlock Foreground="#666" FontSize="12"
+                                               Text="{Binding Max, StringFormat=Max: {0:0.##}}"/>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+
+            <Grid Grid.Row="1" Grid.Column="0" Margin="0,8,0,0">
                 <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center"
                            Visibility="{Binding NoChartSeries, Converter={StaticResource BoolToVis}}"
                            Foreground="#888" FontSize="16"

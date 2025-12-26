@@ -45,6 +45,7 @@ public sealed class MainViewModel : NotifyBase, IDisposable
     public ObservableCollection<AxisLabelViewModel> YAxisLabels { get; } = new();
     public ObservableCollection<AxisLineViewModel> XAxisGridLines { get; } = new();
     public ObservableCollection<AxisLineViewModel> YAxisGridLines { get; } = new();
+    public ObservableCollection<SeriesScaleLabelViewModel> SeriesScaleLabels { get; } = new();
 
     private readonly CollectionViewSource _pollingReadUsagesView = new();
     public ICollectionView PollingReadUsagesView => _pollingReadUsagesView.View;
@@ -913,6 +914,7 @@ public sealed class MainViewModel : NotifyBase, IDisposable
                 series.UpdatePoints(samples, min, max, ChartWidth, ChartHeight);
         }
 
+        UpdateSeriesScaleLabels();
         UpdateYAxisLabels();
         UpdateTimeAxisLabels();
     }
@@ -968,6 +970,40 @@ public sealed class MainViewModel : NotifyBase, IDisposable
             double x = (ChartWidth - 1) * i / ticks;
             double top = ChartHeight - 18;
             TimeAxisLabels.Add(new AxisLabelViewModel(x, top, $"{t:0.#}s"));
+        }
+    }
+
+    private void UpdateSeriesScaleLabels()
+    {
+        SeriesScaleLabels.Clear();
+
+        foreach (var (usage, series) in _chartSeriesMap)
+        {
+            if (!_chartSamplesMap.TryGetValue(usage, out var samples)) continue;
+
+            double min = double.MaxValue;
+            double max = double.MinValue;
+            foreach (double v in samples)
+            {
+                double scaled = v * usage.ChartScale + usage.ChartOffset;
+                if (scaled < min) min = scaled;
+                if (scaled > max) max = scaled;
+            }
+
+            if (min == double.MaxValue || max == double.MinValue)
+            {
+                min = 0;
+                max = 0;
+            }
+
+            SeriesScaleLabels.Add(new SeriesScaleLabelViewModel(
+                series.Label,
+                series.Stroke,
+                usage.ChartScale,
+                usage.ChartOffset,
+                min,
+                max
+            ));
         }
     }
 
