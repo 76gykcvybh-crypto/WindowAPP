@@ -21,6 +21,8 @@
         <WrapPanel Grid.Row="1" Margin="0,8,0,8">
             <TextBlock VerticalAlignment="Center" Foreground="#666" Text="Time window (s):" />
             <TextBox Width="90" Margin="6,0,0,0" Text="{Binding ChartTimeWindowSeconds}" />
+            <CheckBox Margin="20,0,0,0" VerticalAlignment="Center" Content="Pause"
+                      IsChecked="{Binding ChartPaused, Mode=TwoWay}" />
         </WrapPanel>
 
         <DataGrid Grid.Row="2"
@@ -100,7 +102,7 @@
                            Text="No chart series selected."/>
                 <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
                     <Border BorderBrush="#333" BorderThickness="1" Padding="6" Background="#111">
-                        <Canvas Width="1000" Height="500" Background="#111">
+                        <Canvas Width="1000" Height="500" Background="#F7F7F7">
                             <ItemsControl ItemsSource="{Binding XAxisGridLines}">
                                 <ItemsControl.ItemsPanel>
                                     <ItemsPanelTemplate>
@@ -110,7 +112,7 @@
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
                                         <Line X1="{Binding X1}" Y1="{Binding Y1}" X2="{Binding X2}" Y2="{Binding Y2}"
-                                              Stroke="#1F1F1F" StrokeThickness="1" />
+                                              Stroke="#CFCFCF" StrokeThickness="1" />
                                     </DataTemplate>
                                 </ItemsControl.ItemTemplate>
                             </ItemsControl>
@@ -123,14 +125,14 @@
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
                                         <Line X1="{Binding X1}" Y1="{Binding Y1}" X2="{Binding X2}" Y2="{Binding Y2}"
-                                              Stroke="#1F1F1F" StrokeThickness="1" />
+                                              Stroke="#CFCFCF" StrokeThickness="1" />
                                     </DataTemplate>
                                 </ItemsControl.ItemTemplate>
                             </ItemsControl>
-                            <Line X1="0" Y1="0" X2="0" Y2="499" Stroke="#444" StrokeThickness="1.5" />
-                            <Line X1="0" Y1="499" X2="999" Y2="499" Stroke="#444" StrokeThickness="1.5" />
-                            <TextBlock Canvas.Left="6" Canvas.Top="6" Foreground="#777" FontSize="12" Text="Y" />
-                            <TextBlock Canvas.Left="980" Canvas.Top="482" Foreground="#777" FontSize="12" Text="X" />
+                            <Line X1="0" Y1="0" X2="0" Y2="499" Stroke="#666" StrokeThickness="1.5" />
+                            <Line X1="0" Y1="499" X2="999" Y2="499" Stroke="#666" StrokeThickness="1.5" />
+                            <TextBlock Canvas.Left="6" Canvas.Top="6" Foreground="#555" FontSize="12" Text="Y" />
+                            <TextBlock Canvas.Left="980" Canvas.Top="482" Foreground="#555" FontSize="12" Text="X" />
                             <ItemsControl ItemsSource="{Binding YAxisLabels}">
                                 <ItemsControl.ItemsPanel>
                                     <ItemsPanelTemplate>
@@ -140,7 +142,7 @@
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
                                         <TextBlock Canvas.Left="{Binding Left}" Canvas.Top="{Binding Top}"
-                                                   Foreground="#777" FontSize="11" Text="{Binding Text}" />
+                                                   Foreground="#555" FontSize="11" Text="{Binding Text}" />
                                     </DataTemplate>
                                 </ItemsControl.ItemTemplate>
                             </ItemsControl>
@@ -153,7 +155,7 @@
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
                                         <TextBlock Canvas.Left="{Binding Left}" Canvas.Top="{Binding Top}"
-                                                   Foreground="#777" FontSize="11" Text="{Binding Text}" />
+                                                   Foreground="#555" FontSize="11" Text="{Binding Text}" />
                                     </DataTemplate>
                                 </ItemsControl.ItemTemplate>
                             </ItemsControl>

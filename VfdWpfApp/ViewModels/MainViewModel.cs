@@ -65,6 +65,16 @@ public sealed class MainViewModel : NotifyBase, IDisposable
     private Window? _oscilloscopeWindow;
     private double _chartMin;
     private double _chartMax = 1;
+    private bool _chartPaused;
+    public bool ChartPaused
+    {
+        get => _chartPaused;
+        set
+        {
+            if (Set(ref _chartPaused, value))
+                UpdateChartTimer();
+        }
+    }
 
     private const double ChartWidth = 1000;
     private const double ChartHeight = 500;
@@ -260,7 +270,7 @@ public sealed class MainViewModel : NotifyBase, IDisposable
 
         _chartTimer.Interval = TimeSpan.FromMilliseconds(ChartRefreshIntervalMs);
         _chartTimer.Tick += (_, _) => UpdateChartFromCurrentValues();
-        _chartTimer.Start();
+        UpdateChartTimer();
 
         ChartSeries.CollectionChanged += OnChartSeriesChanged;
         UpdateAxisGrid();
@@ -871,6 +881,19 @@ public sealed class MainViewModel : NotifyBase, IDisposable
         }
 
         UpdateChartSeries();
+    }
+
+    private void UpdateChartTimer()
+    {
+        if (ChartPaused)
+        {
+            _chartTimer.Stop();
+        }
+        else
+        {
+            if (!_chartTimer.IsEnabled)
+                _chartTimer.Start();
+        }
     }
 
     private void AddChartSampleValue(ParameterUsageViewModel usage, double value)
