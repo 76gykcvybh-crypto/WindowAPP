@@ -391,22 +391,30 @@
                             </ItemsControl>
 
                             <Grid Grid.Row="1" Margin="0,8,0,0">
-                                <Canvas Width="800" Height="300" Background="#111">
-                                    <Line X1="0" Y1="0" X2="0" Y2="300" Stroke="#444" StrokeThickness="1" />
-                                    <Line X1="0" Y1="300" X2="800" Y2="300" Stroke="#444" StrokeThickness="1" />
-                                    <ItemsControl ItemsSource="{Binding ChartSeries}">
-                                        <ItemsControl.ItemsPanel>
-                                            <ItemsPanelTemplate>
-                                                <Canvas />
-                                            </ItemsPanelTemplate>
-                                        </ItemsControl.ItemsPanel>
-                                        <ItemsControl.ItemTemplate>
-                                            <DataTemplate>
-                                                <Polyline Points="{Binding Points}" Stroke="{Binding Stroke}" StrokeThickness="1.5"/>
-                                            </DataTemplate>
-                                        </ItemsControl.ItemTemplate>
-                                    </ItemsControl>
-                                </Canvas>
+                                <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center"
+                                           Visibility="{Binding NoChartSeries, Converter={StaticResource BoolToVis}}"
+                                           Foreground="#888" FontSize="16"
+                                           Text="No chart series selected."/>
+                                <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+                                    <Border BorderBrush="#333" BorderThickness="1" Padding="6" Background="#111">
+                                        <Canvas Width="1000" Height="500" Background="#111">
+                                            <Line X1="0" Y1="0" X2="0" Y2="500" Stroke="#444" StrokeThickness="1" />
+                                            <Line X1="0" Y1="500" X2="1000" Y2="500" Stroke="#444" StrokeThickness="1" />
+                                            <ItemsControl ItemsSource="{Binding ChartSeries}">
+                                                <ItemsControl.ItemsPanel>
+                                                    <ItemsPanelTemplate>
+                                                        <Canvas />
+                                                    </ItemsPanelTemplate>
+                                                </ItemsControl.ItemsPanel>
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <Polyline Points="{Binding Points}" Stroke="{Binding Stroke}" StrokeThickness="1.5"/>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </Canvas>
+                                    </Border>
+                                </ScrollViewer>
                             </Grid>
                         </Grid>
                     </Grid>

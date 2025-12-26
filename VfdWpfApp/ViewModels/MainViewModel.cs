@@ -1,5 +1,6 @@
 using System;
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
@@ -37,6 +38,8 @@ public sealed class MainViewModel : NotifyBase, IDisposable
     public ObservableCollection<ParameterUsageViewModel> ParameterUsages { get; } = new();
     public ObservableCollection<LogEntryViewModel> LogEntries { get; } = new();
     public ObservableCollection<ChartSeriesViewModel> ChartSeries { get; } = new();
+    public bool HasChartSeries => ChartSeries.Count > 0;
+    public bool NoChartSeries => ChartSeries.Count == 0;
 
     private readonly CollectionViewSource _pollingReadUsagesView = new();
     public ICollectionView PollingReadUsagesView => _pollingReadUsagesView.View;
@@ -52,8 +55,8 @@ public sealed class MainViewModel : NotifyBase, IDisposable
     private readonly DispatcherTimer _chartTimer = new();
 
     private const int ChartMaxSamples = 200;
-    private const double ChartWidth = 800;
-    private const double ChartHeight = 300;
+    private const double ChartWidth = 1000;
+    private const double ChartHeight = 500;
     private const int ChartRefreshIntervalMs = 100;
 
     public string[] ParityOptions { get; } = Enum.GetNames(typeof(Parity));
@@ -226,6 +229,8 @@ public sealed class MainViewModel : NotifyBase, IDisposable
         _chartTimer.Interval = TimeSpan.FromMilliseconds(ChartRefreshIntervalMs);
         _chartTimer.Tick += (_, _) => UpdateChartFromCurrentValues();
         _chartTimer.Start();
+
+        ChartSeries.CollectionChanged += OnChartSeriesChanged;
     }
 
     private bool IsConnected => _transport.IsOpen;
@@ -780,6 +785,12 @@ public sealed class MainViewModel : NotifyBase, IDisposable
         _chartSamplesMap.Remove(usage);
         ChartSeries.Remove(series);
         UpdateChartSeries();
+    }
+
+    private void OnChartSeriesChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        Raise(nameof(HasChartSeries));
+        Raise(nameof(NoChartSeries));
     }
 
     private void UpdateChartFromCurrentValues()
