@@ -257,9 +257,45 @@
             </Border>
 
             <TabControl Grid.Row="1" Margin="0,12,0,0">
-                <TabItem Header="Polling Parameters">
+                <TabItem Header="Polling Read">
                     <Grid Margin="10">
-                        <DataGrid ItemsSource="{Binding PollingUsagesView}"
+                        <DataGrid ItemsSource="{Binding PollingReadUsagesView}"
+                                  AutoGenerateColumns="False"
+                                  IsReadOnly="False"
+                                  CanUserAddRows="False"
+                                  HeadersVisibility="Column"
+                                  GridLinesVisibility="Horizontal"
+                                  RowHeaderWidth="0">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Address" Binding="{Binding AddressHex}" Width="90" IsReadOnly="True"/>
+                                <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="*" IsReadOnly="True"/>
+                                <DataGridTemplateColumn Header="Chart" Width="70">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <CheckBox IsChecked="{Binding IsChartSelected, Mode=TwoWay}" />
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                                <DataGridTemplateColumn Header="Action" Width="120">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <ComboBox ItemsSource="{Binding Source={StaticResource ActionTypes}}"
+                                                      SelectedItem="{Binding Action, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                                <DataGridTextColumn Header="Poll (ms)" Binding="{Binding PollIntervalMs}" Width="90"/>
+                                <DataGridTextColumn Header="Write U16" Binding="{Binding WriteValueU16}" Width="120"/>
+                                <DataGridTextColumn Header="Last (Dec)" Binding="{Binding LastValueDec}" Width="110" IsReadOnly="True"/>
+                                <DataGridTextColumn Header="Last (Hex)" Binding="{Binding LastValueHex}" Width="110" IsReadOnly="True"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Grid>
+                </TabItem>
+
+                <TabItem Header="Polling Write">
+                    <Grid Margin="10">
+                        <DataGrid ItemsSource="{Binding PollingWriteUsagesView}"
                                   AutoGenerateColumns="False"
                                   IsReadOnly="False"
                                   CanUserAddRows="False"
@@ -279,8 +315,6 @@
                                 </DataGridTemplateColumn>
                                 <DataGridTextColumn Header="Poll (ms)" Binding="{Binding PollIntervalMs}" Width="90"/>
                                 <DataGridTextColumn Header="Write U16" Binding="{Binding WriteValueU16}" Width="120"/>
-                                <DataGridTextColumn Header="Last (Dec)" Binding="{Binding LastValueDec}" Width="110" IsReadOnly="True"/>
-                                <DataGridTextColumn Header="Last (Hex)" Binding="{Binding LastValueHex}" Width="110" IsReadOnly="True"/>
                             </DataGrid.Columns>
                         </DataGrid>
                     </Grid>
@@ -320,6 +354,61 @@
                                 </DataGridTemplateColumn>
                             </DataGrid.Columns>
                         </DataGrid>
+                    </Grid>
+                </TabItem>
+
+                <TabItem Header="Oscilloscope">
+                    <Grid Margin="10">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <StackPanel Grid.Row="0" Orientation="Horizontal">
+                            <TextBlock VerticalAlignment="Center" Foreground="#666" Text="Select up to 5 polling read items (Chart checkbox) to plot." />
+                        </StackPanel>
+
+                        <Grid Grid.Row="1" Margin="0,10,0,0">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+
+                            <ItemsControl Grid.Row="0" ItemsSource="{Binding ChartSeries}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <StackPanel Orientation="Horizontal" />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Horizontal" Margin="0,0,10,0">
+                                            <Rectangle Width="12" Height="12" Fill="{Binding Stroke}" Margin="0,0,6,0"/>
+                                            <TextBlock Text="{Binding Label}" />
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+
+                            <Grid Grid.Row="1" Margin="0,8,0,0">
+                                <Canvas Width="800" Height="300" Background="#111">
+                                    <Line X1="0" Y1="0" X2="0" Y2="300" Stroke="#444" StrokeThickness="1" />
+                                    <Line X1="0" Y1="300" X2="800" Y2="300" Stroke="#444" StrokeThickness="1" />
+                                    <ItemsControl ItemsSource="{Binding ChartSeries}">
+                                        <ItemsControl.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <Canvas />
+                                            </ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Polyline Points="{Binding Points}" Stroke="{Binding Stroke}" StrokeThickness="1.5"/>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </Canvas>
+                            </Grid>
+                        </Grid>
                     </Grid>
                 </TabItem>
 

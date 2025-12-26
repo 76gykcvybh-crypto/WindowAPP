@@ -10,6 +10,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Data;
+using System.Windows.Media;
 using VfdWpfApp.Core;
 using VfdWpfApp.Models;
 using VfdWpfApp.Services;
@@ -25,6 +26,7 @@ public sealed class MainViewModel : NotifyBase, IDisposable
     private PeriodicTimer? _pollTimer;
     private CancellationTokenSource? _pollCts;
     private bool _isLoadingUsages;
+    private bool _isUpdatingChartSelection;
 
     private static readonly string UsageConfigPath =
         Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "usage_entries.json");
@@ -33,12 +35,23 @@ public sealed class MainViewModel : NotifyBase, IDisposable
     public ObservableCollection<ParameterRowViewModel> Parameters { get; } = new();
     public ObservableCollection<ParameterUsageViewModel> ParameterUsages { get; } = new();
     public ObservableCollection<LogEntryViewModel> LogEntries { get; } = new();
+    public ObservableCollection<ChartSeriesViewModel> ChartSeries { get; } = new();
 
-    private readonly CollectionViewSource _pollingUsagesView = new();
-    public ICollectionView PollingUsagesView => _pollingUsagesView.View;
+    private readonly CollectionViewSource _pollingReadUsagesView = new();
+    public ICollectionView PollingReadUsagesView => _pollingReadUsagesView.View;
+
+    private readonly CollectionViewSource _pollingWriteUsagesView = new();
+    public ICollectionView PollingWriteUsagesView => _pollingWriteUsagesView.View;
 
     private readonly CollectionViewSource _singleUsagesView = new();
     public ICollectionView SingleUsagesView => _singleUsagesView.View;
+
+    private readonly Dictionary<ParameterUsageViewModel, ChartSeriesViewModel> _chartSeriesMap = new();
+    private readonly Dictionary<ParameterUsageViewModel, List<double>> _chartSamplesMap = new();
+
+    private const int ChartMaxSamples = 200;
+    private const double ChartWidth = 800;
+    private const double ChartHeight = 300;
 
     public string[] ParityOptions { get; } = Enum.GetNames(typeof(Parity));
     public string[] StopBitOptions { get; } = Enum.GetNames(typeof(StopBits));
@@ -189,9 +202,17 @@ public sealed class MainViewModel : NotifyBase, IDisposable
         LoadParameterCatalog();
         RefreshPorts();
 
-        _pollingUsagesView.Source = ParameterUsages;
-        _pollingUsagesView.Filter += (_, e) =>
-            e.Accepted = e.Item is ParameterUsageViewModel usage && usage.Mode == ParameterUsageMode.Polling;
+        _pollingReadUsagesView.Source = ParameterUsages;
+        _pollingReadUsagesView.Filter += (_, e) =>
+            e.Accepted = e.Item is ParameterUsageViewModel usage
+                         && usage.Mode == ParameterUsageMode.Polling
+                         && usage.Action == ParameterActionType.Read;
+
+        _pollingWriteUsagesView.Source = ParameterUsages;
+        _pollingWriteUsagesView.Filter += (_, e) =>
+            e.Accepted = e.Item is ParameterUsageViewModel usage
+                         && usage.Mode == ParameterUsageMode.Polling
+                         && usage.Action == ParameterActionType.Write;
 
         _singleUsagesView.Source = ParameterUsages;
         _singleUsagesView.Filter += (_, e) =>
@@ -608,6 +629,7 @@ public sealed class MainViewModel : NotifyBase, IDisposable
                 ushort v = res.GetWord(0);
 
                 Application.Current.Dispatcher.Invoke(() => usage.Parameter.SetLastValue(v));
+                AddChartSample(usage, v);
 
                 string parsed = BuildParsedParameter(addr, v);
                 AddLog(LogDirection.RX, Array.Empty<byte>(), $"Poll {parsed}", "OK", res.RttMs);
@@ -664,24 +686,149 @@ public sealed class MainViewModel : NotifyBase, IDisposable
     {
         usage.PropertyChanged += OnUsagePropertyChanged;
         ParameterUsages.Add(usage);
+
+        if (usage.IsChartSelected)
+            HandleChartSelectionChange(usage);
     }
 
     private void UnregisterUsage(ParameterUsageViewModel usage)
     {
         usage.PropertyChanged -= OnUsagePropertyChanged;
         ParameterUsages.Remove(usage);
+        RemoveChartSeries(usage);
     }
 
     private void OnUsagePropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (e.PropertyName == nameof(ParameterUsageViewModel.Mode))
+        if (e.PropertyName == nameof(ParameterUsageViewModel.Mode)
+            || e.PropertyName == nameof(ParameterUsageViewModel.Action))
         {
-            _pollingUsagesView.View?.Refresh();
+            _pollingReadUsagesView.View?.Refresh();
+            _pollingWriteUsagesView.View?.Refresh();
             _singleUsagesView.View?.Refresh();
+
+            if (sender is ParameterUsageViewModel usage && usage.IsChartSelected)
+                HandleChartSelectionChange(usage);
+        }
+
+        if (e.PropertyName == nameof(ParameterUsageViewModel.IsChartSelected))
+        {
+            if (sender is ParameterUsageViewModel usage)
+                HandleChartSelectionChange(usage);
         }
 
         if (!_isLoadingUsages)
             SaveUsageEntries();
+    }
+
+    private void HandleChartSelectionChange(ParameterUsageViewModel usage)
+    {
+        if (_isUpdatingChartSelection) return;
+
+        if (usage.Mode != ParameterUsageMode.Polling || usage.Action != ParameterActionType.Read)
+        {
+            if (usage.IsChartSelected)
+            {
+                _isUpdatingChartSelection = true;
+                usage.IsChartSelected = false;
+                _isUpdatingChartSelection = false;
+            }
+            return;
+        }
+
+        if (usage.IsChartSelected)
+        {
+            if (_chartSeriesMap.Count >= 5)
+            {
+                _isUpdatingChartSelection = true;
+                usage.IsChartSelected = false;
+                _isUpdatingChartSelection = false;
+                FooterStatus = "Chart selection limited to 5 polling read items.";
+                return;
+            }
+
+            AddChartSeries(usage);
+        }
+        else
+        {
+            RemoveChartSeries(usage);
+        }
+    }
+
+    private void AddChartSeries(ParameterUsageViewModel usage)
+    {
+        if (_chartSeriesMap.ContainsKey(usage)) return;
+
+        var color = GetNextChartColor();
+        var series = new ChartSeriesViewModel($"{usage.AddressHex} {usage.Name}", color);
+        _chartSeriesMap[usage] = series;
+        _chartSamplesMap[usage] = new List<double>(ChartMaxSamples);
+        ChartSeries.Add(series);
+        UpdateChartSeries();
+    }
+
+    private void RemoveChartSeries(ParameterUsageViewModel usage)
+    {
+        if (!_chartSeriesMap.Remove(usage, out var series)) return;
+
+        _chartSamplesMap.Remove(usage);
+        ChartSeries.Remove(series);
+        UpdateChartSeries();
+    }
+
+    private void AddChartSample(ParameterUsageViewModel usage, ushort value)
+    {
+        if (!usage.IsChartSelected) return;
+        if (!_chartSamplesMap.TryGetValue(usage, out var samples)) return;
+
+        samples.Add(value);
+        if (samples.Count > ChartMaxSamples)
+            samples.RemoveAt(0);
+
+        UpdateChartSeries();
+    }
+
+    private void UpdateChartSeries()
+    {
+        if (ChartSeries.Count == 0) return;
+
+        double min = double.MaxValue;
+        double max = double.MinValue;
+
+        foreach (var samples in _chartSamplesMap.Values)
+        {
+            foreach (double v in samples)
+            {
+                if (v < min) min = v;
+                if (v > max) max = v;
+            }
+        }
+
+        if (min == double.MaxValue || max == double.MinValue)
+        {
+            min = 0;
+            max = 1;
+        }
+
+        foreach (var (usage, series) in _chartSeriesMap)
+        {
+            if (_chartSamplesMap.TryGetValue(usage, out var samples))
+                series.UpdatePoints(samples, min, max, ChartWidth, ChartHeight);
+        }
+    }
+
+    private Brush GetNextChartColor()
+    {
+        Brush[] colors =
+        {
+            Brushes.DeepSkyBlue,
+            Brushes.LimeGreen,
+            Brushes.OrangeRed,
+            Brushes.Goldenrod,
+            Brushes.MediumPurple
+        };
+
+        return colors[_chartSeriesMap.Count % colors.Length];
     }
 
     private void LoadUsageEntries()
@@ -696,6 +843,9 @@ public sealed class MainViewModel : NotifyBase, IDisposable
             if (entries is null) return;
 
             ParameterUsages.Clear();
+            ChartSeries.Clear();
+            _chartSeriesMap.Clear();
+            _chartSamplesMap.Clear();
             foreach (var param in Parameters)
                 param.Usages.Clear();
 
@@ -709,7 +859,8 @@ public sealed class MainViewModel : NotifyBase, IDisposable
                     Mode = entry.Mode,
                     Action = entry.Action,
                     PollIntervalMs = entry.PollIntervalMs,
-                    WriteValueU16 = entry.WriteValueU16
+                    WriteValueU16 = entry.WriteValueU16,
+                    IsChartSelected = entry.IsChartSelected
                 };
                 RegisterUsage(usage);
                 param.Usages.Add(usage);
@@ -734,7 +885,8 @@ public sealed class MainViewModel : NotifyBase, IDisposable
                 usage.Mode,
                 usage.Action,
                 usage.PollIntervalMs,
-                usage.WriteValueU16
+                usage.WriteValueU16,
+                usage.IsChartSelected
             )).ToList();
 
             var json = JsonSerializer.Serialize(entries, new JsonSerializerOptions { WriteIndented = true });
@@ -751,7 +903,8 @@ public sealed class MainViewModel : NotifyBase, IDisposable
         ParameterUsageMode Mode,
         ParameterActionType Action,
         int PollIntervalMs,
-        string WriteValueU16
+        string WriteValueU16,
+        bool IsChartSelected
     );
 
     public void Dispose()
