@@ -89,12 +89,13 @@
             <TabControl Grid.Row="1" Margin="0,12,0,0">
                 <TabItem Header="Parameters">
                     <Grid Margin="10">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="1.5*"/>
-                            <ColumnDefinition Width="1*"/>
-                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
 
-                        <DataGrid Grid.Column="0"
+                        <DataGrid Grid.Row="0"
                                   ItemsSource="{Binding Parameters}"
                                   SelectedItem="{Binding SelectedParameter}"
                                   AutoGenerateColumns="False"
@@ -113,19 +114,16 @@
                             </DataGrid.Columns>
                         </DataGrid>
 
-                        <Border Grid.Column="1" Margin="12,0,0,0" BorderBrush="#DDD" BorderThickness="1" CornerRadius="6" Padding="10">
+                        <WrapPanel Grid.Row="1" Margin="0,10,0,10">
+                            <TextBlock VerticalAlignment="Center" Foreground="#666" Text="Select a parameter above, then add a usage entry:" />
+                            <Button Margin="10,0,0,0" Width="120" Content="Add Usage" Command="{Binding AddUsageCommand}" />
+                        </WrapPanel>
+
+                        <Border Grid.Row="2" BorderBrush="#DDD" BorderThickness="1" CornerRadius="6" Padding="10">
                             <StackPanel>
-                                <TextBlock FontSize="16" FontWeight="SemiBold" Text="Selected Parameter"/>
-                                <TextBlock Margin="0,8,0,0" Text="{Binding SelectedParameter.AddressHex}" FontFamily="Consolas"/>
-                                <TextBlock Text="{Binding SelectedParameter.Name}" TextWrapping="Wrap" Margin="0,4,0,0"/>
-                                <TextBlock Text="{Binding SelectedParameter.Description}" TextWrapping="Wrap" Margin="0,8,0,0" Foreground="#444"/>
-
-                                <WrapPanel Margin="0,10,0,0">
-                                    <Button Width="120" Content="Add Usage" Command="{Binding AddUsageCommand}" />
-                                </WrapPanel>
-
+                                <TextBlock FontSize="16" FontWeight="SemiBold" Text="Usage Entries"/>
                                 <DataGrid Margin="0,10,0,0"
-                                          ItemsSource="{Binding SelectedParameter.Usages}"
+                                          ItemsSource="{Binding ParameterUsages}"
                                           AutoGenerateColumns="False"
                                           IsReadOnly="False"
                                           CanUserAddRows="False"
@@ -133,6 +131,8 @@
                                           GridLinesVisibility="Horizontal"
                                           RowHeaderWidth="0">
                                     <DataGrid.Columns>
+                                        <DataGridTextColumn Header="Address" Binding="{Binding AddressHex}" Width="90" IsReadOnly="True"/>
+                                        <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="*" IsReadOnly="True"/>
                                         <DataGridTemplateColumn Header="Mode" Width="110">
                                             <DataGridTemplateColumn.CellTemplate>
                                                 <DataTemplate>
