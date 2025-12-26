@@ -1,0 +1,646 @@
+[
+  {
+    "address_hex": "0x0000",
+    "address": 0,
+    "name": "停止跑帶馬達",
+    "access": "WO_CMD",
+    "unit": null,
+    "description": "寫入1 , 停止跑帶馬達",
+    "note": "",
+    "bitfields": [],
+    "write_value_u16": 1
+  },
+  {
+    "address_hex": "0x0001",
+    "address": 1,
+    "name": "啟動跑帶馬達",
+    "access": "WO_CMD",
+    "unit": null,
+    "description": "寫入1 , 啟動跑帶馬達",
+    "note": "",
+    "bitfields": [],
+    "write_value_u16": 1
+  },
+  {
+    "address_hex": "0x000A",
+    "address": 10,
+    "name": "跑帶馬達轉速命令 , 單位:0.01Hz",
+    "access": "RW",
+    "unit": "0.01Hz",
+    "description": "跑帶馬達轉速命令 , 單位:0.01Hz",
+    "note": "1. 有 RPM 機種時 , 此單位是馬達轉速 0.01 rps\n2. 無 RPM 機種時 , 此單位是馬達電氣頻率 0.01 Hz\n3. 線性速度模式時，不可使用此參數",
+    "bitfields": []
+  },
+  {
+    "address_hex": "0x000B",
+    "address": 11,
+    "name": "揚升馬達皆斷電)",
+    "access": "WO_CMD",
+    "unit": null,
+    "description": "寫入1 , 下控關機 , (跑帶馬達,揚升馬達皆斷電)",
+    "note": "",
+    "bitfields": [],
+    "write_value_u16": 1
+  },
+  {
+    "address_hex": "0x0100",
+    "address": 256,
+    "name": "系統狀態",
+    "access": "RO",
+    "unit": null,
+    "description": "系統狀態\nBIT00 : 0/1--- 初始化未完成/已完成\nBIT04 : 0/1--- 馬達停止/運轉中",
+    "note": "read only",
+    "bitfields": [
+      {
+        "bit": 0,
+        "meaning": "0/1--- 初始化未完成/已完成"
+      },
+      {
+        "bit": 4,
+        "meaning": "0/1--- 馬達停止/運轉中"
+      }
+    ]
+  },
+  {
+    "address_hex": "0x0101",
+    "address": 257,
+    "name": "系統保護狀態",
+    "access": "RO",
+    "unit": null,
+    "description": "系統保護狀態\nBIT00 :  電壓狀態（0：初始中、1：充電正常）\nBIT01 :  低電壓狀態（0：正常、1：異常）（無法重置）\nBIT02 :  電壓過載狀態（0：正常、1：異常）（無法重置）\nBIT03 :  過電壓狀態（0：正常、1：異常）（無法重置）\nBIT04 :  零電流狀態（0：正常、1：異常）（無法重置）\nBIT06 :  電流過載狀態（0：正常、1：異常）（無法重置）\nBIT07 :  過電流狀態（0：正常、1：異常）（無法重置）\nBIT08 :  IPM狀態（0：正常、1：異常）（無法重置）\nBIT09 :  Safty key狀態（0：正常、1：移除）\nBIT12 :  RPM E1 保護（0：正常、1：異常）（無法重置）\nBIT13 :  馬達慣性狀態（0：慣性運轉中、1：慣性停止）",
+    "note": "read only",
+    "bitfields": [
+      {
+        "bit": 0,
+        "meaning": "電壓狀態（0：初始中、1：充電正常）"
+      },
+      {
+        "bit": 1,
+        "meaning": "低電壓狀態（0：正常、1：異常）（無法重置）"
+      },
+      {
+        "bit": 2,
+        "meaning": "電壓過載狀態（0：正常、1：異常）（無法重置）"
+      },
+      {
+        "bit": 3,
+        "meaning": "過電壓狀態（0：正常、1：異常）（無法重置）"
+      },
+      {
+        "bit": 4,
+        "meaning": "零電流狀態（0：正常、1：異常）（無法重置）"
+      },
+      {
+        "bit": 6,
+        "meaning": "電流過載狀態（0：正常、1：異常）（無法重置）"
+      },
+      {
+        "bit": 7,
+        "meaning": "過電流狀態（0：正常、1：異常）（無法重置）"
+      },
+      {
+        "bit": 8,
+        "meaning": "IPM狀態（0：正常、1：異常）（無法重置）"
+      },
+      {
+        "bit": 9,
+        "meaning": "Safty key狀態（0：正常、1：移除）"
+      },
+      {
+        "bit": 12,
+        "meaning": "RPM E1 保護（0：正常、1：異常）（無法重置）"
+      },
+      {
+        "bit": 13,
+        "meaning": "馬達慣性狀態（0：慣性運轉中、1：慣性停止）"
+      }
+    ]
+  },
+  {
+    "address_hex": "0x0110",
+    "address": 272,
+    "name": "驅動器馬力數 , 單位 : 0.01 hp",
+    "access": "RO",
+    "unit": "0.01 hp",
+    "description": "驅動器馬力數 , 單位 : 0.01 hp",
+    "note": "read only",
+    "bitfields": []
+  },
+  {
+    "address_hex": "0x0111",
+    "address": 273,
+    "name": "產品碼,TAC3X 固定為 200",
+    "access": "RO",
+    "unit": null,
+    "description": "產品碼，TAC3X 固定為 200",
+    "note": "read only",
+    "bitfields": []
+  },
+  {
+    "address_hex": "0x0112",
+    "address": 274,
+    "name": "韌體年份,16進制表示。",
+    "access": "RO",
+    "unit": null,
+    "description": "韌體年份，16進制表示。\nEx:西元2015年表示為0x2015",
+    "note": "read only",
+    "bitfields": []
+  },
+  {
+    "address_hex": "0x0113",
+    "address": 275,
+    "name": "韌體月日,16進制表示。",
+    "access": "RO",
+    "unit": null,
+    "description": "韌體月日，16進制表示。\nEx:10月3號表示為0x1003",
+    "note": "read only",
+    "bitfields": []
+  },
+  {
+    "address_hex": "0x0114",
+    "address": 276,
+    "name": "驅動器電壓 , 單位 : 1V",
+    "access": "RO",
+    "unit": "1V",
+    "description": "驅動器電壓 , 單位 : 1V",
+    "note": "Read only",
+    "bitfields": []
+  },
+  {
+    "address_hex": "0x0115",
+    "address": 277,
+    "name": "驅動器硬體Type",
+    "access": "RO",
+    "unit": null,
+    "description": "驅動器硬體Type\n1 -- 310 ， 2 -- 320 ， 3 -- 330",
+    "note": "Read only",
+    "bitfields": []
+  },
+  {
+    "address_hex": "0x0200",
+    "address": 512,
+    "name": "真實韌體年份,16進制表示。",
+    "access": "RW",
+    "unit": null,
+    "description": "真實韌體年份，16進制表示。\nEx:西元2015年表示為0x2015",
+    "note": "",
+    "bitfields": []
+  },
+  {
+    "address_hex": "0x0201",
+    "address": 513,
+    "name": "真實韌體月日,16進制表示。",
+    "access": "RW",
+    "unit": null,
+    "description": "真實韌體月日，16進制表示。\nEx:10月3號表示為0x1003",
+    "note": "",
+    "bitfields": []
+  },
+  {
+    "address_hex": "0x0300",
+    "address": 768,
+    "name": "揚升控制 Control register",
+    "access": "RW",
+    "unit": null,
+    "description": "揚升控制 Control register",
+    "note": "",
+    "bitfields": []
+  },
+  {
+    "address_hex": "0x0301",
+    "address": 769,
+    "name": "Target step command , 目標階數",
+    "access": "RW",
+    "unit": null,
+    "description": "Target step command , 目標階數",
+    "note": "",
+    "bitfields": []
+  },
+  {
+    "address_hex": "0x0302",
+    "address": 770,
+    "name": "Total step numbers , 總揚升階數",
+    "access": "RW",
+    "unit": null,
+    "description": "Total step numbers , 總揚升階數",
+    "note": "",
+    "bitfields": []
+  },
+  {
+    "address_hex": "0x0304",
+    "address": 772,
+    "name": "Upper limit of ADC value , 揚升上限 ADC 讀值",
+    "access": "RW",
+    "unit": null,
+    "description": "Upper limit of ADC value , 揚升上限 ADC 讀值",
+    "note": "",
+    "bitfields": []
+  },
+  {
+    "address_hex": "0x0305",
+    "address": 773,
+    "name": "Lower limit of ADC value , 揚升下限 ADC 讀值",
+    "access": "RW",
+    "unit": null,
+    "description": "Lower limit of ADC value , 揚升下限 ADC 讀值",
+    "note": "",
+    "bitfields": []
+  },
+  {
+    "address_hex": "0x0308",
+    "address": 776,
+    "name": "Incline motor parameters , 揚升馬達極性參數",
+    "access": "RW",
+    "unit": null,
+    "description": "Incline motor parameters , 揚升馬達極性參數\n  bit4 - step  auto-initiation   (0/1: disable/enable)\n  bit1 - step  response polarity (0/1: smaller ADC value responses lower/higher step value)\n  bit0 - motor rotation polarity (0/1: ADC decreases/increases while forcing up)\n\n\nBIT01 BIT00 馬達極性\n0 0 馬達正轉，揚升ADC讀值下降，揚升高度下降\n0 1 馬達正轉，揚升ADC讀值上升，揚升高度上升\n1 0 馬達正轉，揚升ADC讀值下降，揚升高度上升\n1 1 馬達正轉，揚升ADC讀值上升，揚升高度下降\n",
+    "note": "",
+    "bitfields": []
+  },
+  {
+    "address_hex": "0x0310",
+    "address": 784,
+    "name": "揚升狀態",
+    "access": "RO",
+    "unit": null,
+    "description": "揚升狀態\nBIT00 : 正常運轉功能（0：結束、1：運轉中）\nBIT01 : 強制運轉功能（0：結束、1：運轉中）\nBIT02 : 自動調整功能狀態（0：結束、1：運轉中）\nBIT03 : 自動調整功能狀態（0：未執行或失敗、1：成功）\nBIT04 : 電壓漂移值狀態（0：正常、1：失控）\nBIT05 : 揚升極限狀態（0：正常、1：失控）\nBIT06 : 揚升移動狀態（0：正常、1：失控）\nBIT07 : 初始化階數狀態（0：失敗、1：成功）\nBIT08 : 位置狀態\n           （0：不在目標容許範圍內、1：在目標容許範圍內）",
+    "note": "read only",
+    "bitfields": [
+      {
+        "bit": 0,
+        "meaning": "正常運轉功能（0：結束、1：運轉中）"
+      },
+      {
+        "bit": 1,
+        "meaning": "強制運轉功能（0：結束、1：運轉中）"
+      },
+      {
+        "bit": 2,
+        "meaning": "自動調整功能狀態（0：結束、1：運轉中）"
+      },
+      {
+        "bit": 3,
+        "meaning": "自動調整功能狀態（0：未執行或失敗、1：成功）"
+      },
+      {
+        "bit": 4,
+        "meaning": "電壓漂移值狀態（0：正常、1：失控）"
+      },
+      {
+        "bit": 5,
+        "meaning": "揚升極限狀態（0：正常、1：失控）"
+      },
+      {
+        "bit": 6,
+        "meaning": "揚升移動狀態（0：正常、1：失控）"
+      },
+      {
+        "bit": 7,
+        "meaning": "初始化階數狀態（0：失敗、1：成功）"
+      },
+      {
+        "bit": 8,
+        "meaning": "位置狀態"
+      }
+    ]
+  },
+  {
+    "address_hex": "0x0311",
+    "address": 785,
+    "name": "目前階數",
+    "access": "RO",
+    "unit": null,
+    "description": "目前階數",
+    "note": "read only",
+    "bitfields": []
+  },
+  {
+    "address_hex": "0x0312",
+    "address": 786,
+    "name": "目前揚升ADC",
+    "access": "RO",
+    "unit": null,
+    "description": "目前揚升ADC",
+    "note": "read only",
+    "bitfields": []
+  },
+  {
+    "address_hex": "0xA300",
+    "address": 41728,
+    "name": "VF 頻率表1",
+    "access": "RW",
+    "unit": null,
+    "description": "VF 頻率表1",
+    "note": "",
+    "bitfields": []
+  },
+  {
+    "address_hex": "0xA301",
+    "address": 41729,
+    "name": "VF 頻率表2",
+    "access": "RW",
+    "unit": null,
+    "description": "VF 頻率表2",
+    "note": "",
+    "bitfields": []
+  },
+  {
+    "address_hex": "0xA302",
+    "address": 41730,
+    "name": "VF 頻率表3",
+    "access": "RW",
+    "unit": null,
+    "description": "VF 頻率表3",
+    "note": "",
+    "bitfields": []
+  },
+  {
+    "address_hex": "0xA303",
+    "address": 41731,
+    "name": "VF 頻率表4",
+    "access": "RW",
+    "unit": null,
+    "description": "VF 頻率表4",
+    "note": "",
+    "bitfields": []
+  },
+  {
+    "address_hex": "0xA304",
+    "address": 41732,
+    "name": "VF 頻率表5",
+    "access": "RW",
+    "unit": null,
+    "description": "VF 頻率表5",
+    "note": "",
+    "bitfields": []
+  },
+  {
+    "address_hex": "0xA305",
+    "address": 41733,
+    "name": "VF 頻率表6",
+    "access": "RW",
+    "unit": null,
+    "description": "VF 頻率表6",
+    "note": "",
+    "bitfields": []
+  },
+  {
+    "address_hex": "0xA306",
+    "address": 41734,
+    "name": "VF 頻率表7",
+    "access": "RW",
+    "unit": null,
+    "description": "VF 頻率表7",
+    "note": "",
+    "bitfields": []
+  },
+  {
+    "address_hex": "0xA307",
+    "address": 41735,
+    "name": "VF 頻率表8",
+    "access": "RW",
+    "unit": null,
+    "description": "VF 頻率表8",
+    "note": "",
+    "bitfields": []
+  },
+  {
+    "address_hex": "0xA308",
+    "address": 41736,
+    "name": "VF 頻率表9",
+    "access": "RW",
+    "unit": null,
+    "description": "VF 頻率表9",
+    "note": "",
+    "bitfields": []
+  },
+  {
+    "address_hex": "0xA309",
+    "address": 41737,
+    "name": "VF 頻率表10",
+    "access": "RW",
+    "unit": null,
+    "description": "VF 頻率表10",
+    "note": "",
+    "bitfields": []
+  },
+  {
+    "address_hex": "0xA30A",
+    "address": 41738,
+    "name": "VF 頻率表11",
+    "access": "RW",
+    "unit": null,
+    "description": "VF 頻率表11",
+    "note": "",
+    "bitfields": []
+  },
+  {
+    "address_hex": "0xA30B",
+    "address": 41739,
+    "name": "VF 頻率表12",
+    "access": "RW",
+    "unit": null,
+    "description": "VF 頻率表12",
+    "note": "",
+    "bitfields": []
+  },
+  {
+    "address_hex": "0xA30C",
+    "address": 41740,
+    "name": "VF 頻率表13",
+    "access": "RW",
+    "unit": null,
+    "description": "VF 頻率表13",
+    "note": "",
+    "bitfields": []
+  },
+  {
+    "address_hex": "0xA30D",
+    "address": 41741,
+    "name": "VF 頻率表14",
+    "access": "RW",
+    "unit": null,
+    "description": "VF 頻率表14",
+    "note": "",
+    "bitfields": []
+  },
+  {
+    "address_hex": "0xA30E",
+    "address": 41742,
+    "name": "VF 頻率表15",
+    "access": "RW",
+    "unit": null,
+    "description": "VF 頻率表15",
+    "note": "",
+    "bitfields": []
+  },
+  {
+    "address_hex": "0xA30F",
+    "address": 41743,
+    "name": "VF 頻率表16",
+    "access": "RW",
+    "unit": null,
+    "description": "VF 頻率表16",
+    "note": "",
+    "bitfields": []
+  },
+  {
+    "address_hex": "0xA310",
+    "address": 41744,
+    "name": "VF 電壓表1",
+    "access": "RW",
+    "unit": null,
+    "description": "VF 電壓表1",
+    "note": "",
+    "bitfields": []
+  },
+  {
+    "address_hex": "0xA311",
+    "address": 41745,
+    "name": "VF 電壓表2",
+    "access": "RW",
+    "unit": null,
+    "description": "VF 電壓表2",
+    "note": "",
+    "bitfields": []
+  },
+  {
+    "address_hex": "0xA312",
+    "address": 41746,
+    "name": "VF 電壓表3",
+    "access": "RW",
+    "unit": null,
+    "description": "VF 電壓表3",
+    "note": "",
+    "bitfields": []
+  },
+  {
+    "address_hex": "0xA313",
+    "address": 41747,
+    "name": "VF 電壓表4",
+    "access": "RW",
+    "unit": null,
+    "description": "VF 電壓表4",
+    "note": "",
+    "bitfields": []
+  },
+  {
+    "address_hex": "0xA314",
+    "address": 41748,
+    "name": "VF 電壓表5",
+    "access": "RW",
+    "unit": null,
+    "description": "VF 電壓表5",
+    "note": "",
+    "bitfields": []
+  },
+  {
+    "address_hex": "0xA315",
+    "address": 41749,
+    "name": "VF 電壓表6",
+    "access": "RW",
+    "unit": null,
+    "description": "VF 電壓表6",
+    "note": "",
+    "bitfields": []
+  },
+  {
+    "address_hex": "0xA316",
+    "address": 41750,
+    "name": "VF 電壓表7",
+    "access": "RW",
+    "unit": null,
+    "description": "VF 電壓表7",
+    "note": "",
+    "bitfields": []
+  },
+  {
+    "address_hex": "0xA317",
+    "address": 41751,
+    "name": "VF 電壓表8",
+    "access": "RW",
+    "unit": null,
+    "description": "VF 電壓表8",
+    "note": "",
+    "bitfields": []
+  },
+  {
+    "address_hex": "0xA318",
+    "address": 41752,
+    "name": "VF 電壓表9",
+    "access": "RW",
+    "unit": null,
+    "description": "VF 電壓表9",
+    "note": "",
+    "bitfields": []
+  },
+  {
+    "address_hex": "0xA319",
+    "address": 41753,
+    "name": "VF 電壓表10",
+    "access": "RW",
+    "unit": null,
+    "description": "VF 電壓表10",
+    "note": "",
+    "bitfields": []
+  },
+  {
+    "address_hex": "0xA31A",
+    "address": 41754,
+    "name": "VF 電壓表11",
+    "access": "RW",
+    "unit": null,
+    "description": "VF 電壓表11",
+    "note": "",
+    "bitfields": []
+  },
+  {
+    "address_hex": "0xA31B",
+    "address": 41755,
+    "name": "VF 電壓表12",
+    "access": "RW",
+    "unit": null,
+    "description": "VF 電壓表12",
+    "note": "",
+    "bitfields": []
+  },
+  {
+    "address_hex": "0xA31C",
+    "address": 41756,
+    "name": "VF 電壓表13",
+    "access": "RW",
+    "unit": null,
+    "description": "VF 電壓表13",
+    "note": "",
+    "bitfields": []
+  },
+  {
+    "address_hex": "0xA31D",
+    "address": 41757,
+    "name": "VF 電壓表14",
+    "access": "RW",
+    "unit": null,
+    "description": "VF 電壓表14",
+    "note": "",
+    "bitfields": []
+  },
+  {
+    "address_hex": "0xA31E",
+    "address": 41758,
+    "name": "VF 電壓表15",
+    "access": "RW",
+    "unit": null,
+    "description": "VF 電壓表15",
+    "note": "",
+    "bitfields": []
+  },
+  {
+    "address_hex": "0xA31F",
+    "address": 41759,
+    "name": "VF 電壓表16",
+    "access": "RW",
+    "unit": null,
+    "description": "VF 電壓表16",
+    "note": "",
+    "bitfields": []
+  }
+]

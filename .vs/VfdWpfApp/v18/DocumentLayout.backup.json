@@ -1,0 +1,41 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "D:\\VfdWpfApp\\VfdWpfApp\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{2A9C385D-8B73-4B36-8F1B-0A7A0C6A5D44}|VfdWpfApp\\VfdWpfApp.csproj|d:\\vfdwpfapp\\vfdwpfapp\\vfdwpfapp\\services\\serialtransport.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{2A9C385D-8B73-4B36-8F1B-0A7A0C6A5D44}|VfdWpfApp\\VfdWpfApp.csproj|solutionrelative:vfdwpfapp\\services\\serialtransport.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 1,
+          "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{cce594b6-0c39-4442-ba28-10c64ac7e89f}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "SerialTransport.cs",
+              "DocumentMoniker": "D:\\VfdWpfApp\\VfdWpfApp\\VfdWpfApp\\Services\\SerialTransport.cs",
+              "RelativeDocumentMoniker": "VfdWpfApp\\Services\\SerialTransport.cs",
+              "ToolTip": "D:\\VfdWpfApp\\VfdWpfApp\\VfdWpfApp\\Services\\SerialTransport.cs",
+              "RelativeToolTip": "VfdWpfApp\\Services\\SerialTransport.cs",
+              "ViewState": "AgIAAAsAAAAAAAAAAAAzwA0AAAAMAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-12-26T07:01:41.97Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
