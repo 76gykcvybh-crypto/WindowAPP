@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.IO;
 using System.IO.Ports;
 using System.Linq;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
@@ -23,6 +24,10 @@ public sealed class MainViewModel : NotifyBase, IDisposable
     private ParameterCatalog? _catalog;
     private PeriodicTimer? _pollTimer;
     private CancellationTokenSource? _pollCts;
+    private bool _isLoadingUsages;
+
+    private static readonly string UsageConfigPath =
+        Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "usage_entries.json");
 
     public ObservableCollection<string> ComPorts { get; } = new();
     public ObservableCollection<ParameterRowViewModel> Parameters { get; } = new();
@@ -191,6 +196,8 @@ public sealed class MainViewModel : NotifyBase, IDisposable
         _singleUsagesView.Source = ParameterUsages;
         _singleUsagesView.Filter += (_, e) =>
             e.Accepted = e.Item is ParameterUsageViewModel usage && usage.Mode == ParameterUsageMode.Single;
+
+        LoadUsageEntries();
     }
 
     private bool IsConnected => _transport.IsOpen;
@@ -640,6 +647,7 @@ public sealed class MainViewModel : NotifyBase, IDisposable
         var usage = new ParameterUsageViewModel(SelectedParameter);
         RegisterUsage(usage);
         SelectedParameter.Usages.Add(usage);
+        SaveUsageEntries();
         FooterStatus = $"Added usage for {SelectedParameter.AddressHex}.";
     }
 
@@ -649,6 +657,7 @@ public sealed class MainViewModel : NotifyBase, IDisposable
 
         usage.Parameter.Usages.Remove(usage);
         UnregisterUsage(usage);
+        SaveUsageEntries();
     }
 
     private void RegisterUsage(ParameterUsageViewModel usage)
@@ -670,7 +679,80 @@ public sealed class MainViewModel : NotifyBase, IDisposable
             _pollingUsagesView.View?.Refresh();
             _singleUsagesView.View?.Refresh();
         }
+
+        if (!_isLoadingUsages)
+            SaveUsageEntries();
     }
+
+    private void LoadUsageEntries()
+    {
+        if (!File.Exists(UsageConfigPath)) return;
+
+        try
+        {
+            _isLoadingUsages = true;
+            var json = File.ReadAllText(UsageConfigPath);
+            var entries = JsonSerializer.Deserialize<List<UsageEntryConfig>>(json);
+            if (entries is null) return;
+
+            ParameterUsages.Clear();
+            foreach (var param in Parameters)
+                param.Usages.Clear();
+
+            foreach (var entry in entries)
+            {
+                var param = Parameters.FirstOrDefault(p => p.Def.Address == entry.Address);
+                if (param is null) continue;
+
+                var usage = new ParameterUsageViewModel(param)
+                {
+                    Mode = entry.Mode,
+                    Action = entry.Action,
+                    PollIntervalMs = entry.PollIntervalMs,
+                    WriteValueU16 = entry.WriteValueU16
+                };
+                RegisterUsage(usage);
+                param.Usages.Add(usage);
+            }
+        }
+        catch (Exception ex)
+        {
+            FooterStatus = $"Failed to load usage entries: {ex.Message}";
+        }
+        finally
+        {
+            _isLoadingUsages = false;
+        }
+    }
+
+    private void SaveUsageEntries()
+    {
+        try
+        {
+            var entries = ParameterUsages.Select(usage => new UsageEntryConfig(
+                usage.Parameter.Def.Address,
+                usage.Mode,
+                usage.Action,
+                usage.PollIntervalMs,
+                usage.WriteValueU16
+            )).ToList();
+
+            var json = JsonSerializer.Serialize(entries, new JsonSerializerOptions { WriteIndented = true });
+            File.WriteAllText(UsageConfigPath, json);
+        }
+        catch (Exception ex)
+        {
+            FooterStatus = $"Failed to save usage entries: {ex.Message}";
+        }
+    }
+
+    private sealed record UsageEntryConfig(
+        int Address,
+        ParameterUsageMode Mode,
+        ParameterActionType Action,
+        int PollIntervalMs,
+        string WriteValueU16
+    );
 
     public void Dispose()
     {
