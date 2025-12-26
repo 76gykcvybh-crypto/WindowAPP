@@ -29,13 +29,15 @@ public sealed class ChartSeriesViewModel : NotifyBase
         }
 
         double range = Math.Max(1, max - min);
-        double xStep = samples.Count <= 1 ? 0 : width / (samples.Count - 1);
+        double usableWidth = Math.Max(1, width - 1);
+        double usableHeight = Math.Max(1, height - 1);
+        double xStep = samples.Count <= 1 ? 0 : usableWidth / (samples.Count - 1);
 
         for (int i = 0; i < samples.Count; i++)
         {
             double x = i * xStep;
             double normalized = (samples[i] - min) / range;
-            double y = height - (normalized * height);
+            double y = usableHeight - (normalized * usableHeight);
             points.Add(new Point(x, y));
         }
 

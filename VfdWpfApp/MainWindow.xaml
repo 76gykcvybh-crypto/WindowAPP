@@ -272,7 +272,7 @@
                                 <DataGridTemplateColumn Header="Chart" Width="70">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
-                                            <CheckBox IsChecked="{Binding IsChartSelected, Mode=TwoWay}" />
+                                            <CheckBox IsChecked="{Binding IsChartSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
@@ -397,23 +397,23 @@
                                            Text="No chart series selected."/>
                                 <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
                                     <Border BorderBrush="#333" BorderThickness="1" Padding="6" Background="#111">
-                                        <Canvas Width="1000" Height="500" Background="#111">
-                                            <Line X1="0" Y1="0" X2="0" Y2="500" Stroke="#444" StrokeThickness="1" />
-                                            <Line X1="0" Y1="500" X2="1000" Y2="500" Stroke="#444" StrokeThickness="1" />
-                                            <ItemsControl ItemsSource="{Binding ChartSeries}">
-                                                <ItemsControl.ItemsPanel>
-                                                    <ItemsPanelTemplate>
-                                                        <Canvas />
-                                                    </ItemsPanelTemplate>
-                                                </ItemsControl.ItemsPanel>
+                                <Canvas Width="1000" Height="500" Background="#111">
+                                    <Line X1="0" Y1="0" X2="0" Y2="499" Stroke="#444" StrokeThickness="1" />
+                                    <Line X1="0" Y1="499" X2="999" Y2="499" Stroke="#444" StrokeThickness="1" />
+                                    <ItemsControl ItemsSource="{Binding ChartSeries}">
+                                        <ItemsControl.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <Canvas />
+                                            </ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
                                                 <ItemsControl.ItemTemplate>
                                                     <DataTemplate>
-                                                        <Polyline Points="{Binding Points}" Stroke="{Binding Stroke}" StrokeThickness="1.5"/>
-                                                    </DataTemplate>
-                                                </ItemsControl.ItemTemplate>
-                                            </ItemsControl>
-                                        </Canvas>
-                                    </Border>
+                                                <Polyline Points="{Binding Points}" Stroke="{Binding Stroke}" StrokeThickness="2"/>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </Canvas>
+                            </Border>
                                 </ScrollViewer>
                             </Grid>
                         </Grid>
