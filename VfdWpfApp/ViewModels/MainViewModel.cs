@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Data;
 using System.Windows.Media;
+using System.Windows.Threading;
 using VfdWpfApp.Core;
 using VfdWpfApp.Models;
 using VfdWpfApp.Services;
@@ -48,10 +49,12 @@ public sealed class MainViewModel : NotifyBase, IDisposable
 
     private readonly Dictionary<ParameterUsageViewModel, ChartSeriesViewModel> _chartSeriesMap = new();
     private readonly Dictionary<ParameterUsageViewModel, List<double>> _chartSamplesMap = new();
+    private readonly DispatcherTimer _chartTimer = new();
 
     private const int ChartMaxSamples = 200;
     private const double ChartWidth = 800;
     private const double ChartHeight = 300;
+    private const int ChartRefreshIntervalMs = 100;
 
     public string[] ParityOptions { get; } = Enum.GetNames(typeof(Parity));
     public string[] StopBitOptions { get; } = Enum.GetNames(typeof(StopBits));
@@ -219,6 +222,10 @@ public sealed class MainViewModel : NotifyBase, IDisposable
             e.Accepted = e.Item is ParameterUsageViewModel usage && usage.Mode == ParameterUsageMode.Single;
 
         LoadUsageEntries();
+
+        _chartTimer.Interval = TimeSpan.FromMilliseconds(ChartRefreshIntervalMs);
+        _chartTimer.Tick += (_, _) => UpdateChartFromCurrentValues();
+        _chartTimer.Start();
     }
 
     private bool IsConnected => _transport.IsOpen;
@@ -629,7 +636,6 @@ public sealed class MainViewModel : NotifyBase, IDisposable
                 ushort v = res.GetWord(0);
 
                 Application.Current.Dispatcher.Invoke(() => usage.Parameter.SetLastValue(v));
-                AddChartSample(usage, v);
 
                 string parsed = BuildParsedParameter(addr, v);
                 AddLog(LogDirection.RX, Array.Empty<byte>(), $"Poll {parsed}", "OK", res.RttMs);
@@ -776,16 +782,26 @@ public sealed class MainViewModel : NotifyBase, IDisposable
         UpdateChartSeries();
     }
 
-    private void AddChartSample(ParameterUsageViewModel usage, ushort value)
+    private void UpdateChartFromCurrentValues()
     {
-        if (!usage.IsChartSelected) return;
+        if (_chartSeriesMap.Count == 0) return;
+
+        foreach (var usage in _chartSeriesMap.Keys)
+        {
+            if (usage.Parameter.TryGetLastValue(out ushort value))
+                AddChartSampleValue(usage, value);
+        }
+
+        UpdateChartSeries();
+    }
+
+    private void AddChartSampleValue(ParameterUsageViewModel usage, double value)
+    {
         if (!_chartSamplesMap.TryGetValue(usage, out var samples)) return;
 
         samples.Add(value);
         if (samples.Count > ChartMaxSamples)
             samples.RemoveAt(0);
-
-        UpdateChartSeries();
     }
 
     private void UpdateChartSeries()

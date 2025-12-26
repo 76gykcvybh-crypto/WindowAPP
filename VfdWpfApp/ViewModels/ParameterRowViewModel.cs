@@ -16,7 +16,7 @@ public sealed class ParameterRowViewModel : NotifyBase
 
     public ObservableCollection<ParameterUsageViewModel> Usages { get; } = new();
 
-    private ushort? _lastValue;
+    private ushort? _lastValue = 0;
     public string LastValueDec => _lastValue is null ? "" : _lastValue.Value.ToString();
     public string LastValueHex => _lastValue is null ? "" : $"0x{_lastValue.Value:X4}";
 
@@ -27,5 +27,17 @@ public sealed class ParameterRowViewModel : NotifyBase
         _lastValue = value;
         Raise(nameof(LastValueDec));
         Raise(nameof(LastValueHex));
+    }
+
+    public bool TryGetLastValue(out ushort value)
+    {
+        if (_lastValue is null)
+        {
+            value = 0;
+            return false;
+        }
+
+        value = _lastValue.Value;
+        return true;
     }
 }
