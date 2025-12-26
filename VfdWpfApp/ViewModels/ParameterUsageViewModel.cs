@@ -34,6 +34,9 @@ public sealed class ParameterUsageViewModel : NotifyBase
     private string _writeValueU16 = "0";
     public string WriteValueU16 { get => _writeValueU16; set => Set(ref _writeValueU16, value); }
 
+    private double _chartScale = 1.0;
+    public double ChartScale { get => _chartScale; set => Set(ref _chartScale, Math.Max(0.0001, value)); }
+
     private bool _isChartSelected;
     public bool IsChartSelected { get => _isChartSelected; set => Set(ref _isChartSelected, value); }
 

@@ -728,6 +728,16 @@ public sealed class MainViewModel : NotifyBase, IDisposable
                 HandleChartSelectionChange(usage);
         }
 
+        if (e.PropertyName == nameof(ParameterUsageViewModel.ChartScale))
+        {
+            if (sender is ParameterUsageViewModel usage
+                && _chartSeriesMap.TryGetValue(usage, out var series))
+            {
+                series.Scale = usage.ChartScale;
+                UpdateChartSeries();
+            }
+        }
+
         if (!_isLoadingUsages)
             SaveUsageEntries();
     }
@@ -771,7 +781,10 @@ public sealed class MainViewModel : NotifyBase, IDisposable
         if (_chartSeriesMap.ContainsKey(usage)) return;
 
         var color = GetNextChartColor();
-        var series = new ChartSeriesViewModel($"{usage.AddressHex} {usage.Name}", color);
+        var series = new ChartSeriesViewModel($"{usage.AddressHex} {usage.Name}", color)
+        {
+            Scale = usage.ChartScale
+        };
         _chartSeriesMap[usage] = series;
         var samples = new List<double>(ChartMaxSamples);
         double seedValue = usage.Parameter.TryGetLastValue(out ushort value) ? value : 0;
@@ -826,12 +839,13 @@ public sealed class MainViewModel : NotifyBase, IDisposable
         double min = double.MaxValue;
         double max = double.MinValue;
 
-        foreach (var samples in _chartSamplesMap.Values)
+        foreach (var (usage, samples) in _chartSamplesMap)
         {
             foreach (double v in samples)
             {
-                if (v < min) min = v;
-                if (v > max) max = v;
+                double scaled = v * usage.ChartScale;
+                if (scaled < min) min = scaled;
+                if (scaled > max) max = scaled;
             }
         }
 
@@ -885,14 +899,15 @@ public sealed class MainViewModel : NotifyBase, IDisposable
                 var param = Parameters.FirstOrDefault(p => p.Def.Address == entry.Address);
                 if (param is null) continue;
 
-                var usage = new ParameterUsageViewModel(param)
-                {
-                    Mode = entry.Mode,
-                    Action = entry.Action,
-                    PollIntervalMs = entry.PollIntervalMs,
-                    WriteValueU16 = entry.WriteValueU16,
-                    IsChartSelected = entry.IsChartSelected
-                };
+            var usage = new ParameterUsageViewModel(param)
+            {
+                Mode = entry.Mode,
+                Action = entry.Action,
+                PollIntervalMs = entry.PollIntervalMs,
+                WriteValueU16 = entry.WriteValueU16,
+                IsChartSelected = entry.IsChartSelected,
+                ChartScale = entry.ChartScale
+            };
                 RegisterUsage(usage);
                 param.Usages.Add(usage);
             }
@@ -917,7 +932,8 @@ public sealed class MainViewModel : NotifyBase, IDisposable
                 usage.Action,
                 usage.PollIntervalMs,
                 usage.WriteValueU16,
-                usage.IsChartSelected
+                usage.IsChartSelected,
+                usage.ChartScale
             )).ToList();
 
             var json = JsonSerializer.Serialize(entries, new JsonSerializerOptions { WriteIndented = true });
@@ -935,7 +951,8 @@ public sealed class MainViewModel : NotifyBase, IDisposable
         ParameterActionType Action,
         int PollIntervalMs,
         string WriteValueU16,
-        bool IsChartSelected
+        bool IsChartSelected,
+        double ChartScale
     );
 
     public void Dispose()

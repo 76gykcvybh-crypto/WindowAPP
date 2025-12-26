@@ -276,6 +276,7 @@
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
+                                <DataGridTextColumn Header="Scale" Binding="{Binding ChartScale}" Width="80"/>
                                 <DataGridTemplateColumn Header="Action" Width="120">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
@@ -397,14 +398,18 @@
                                            Text="No chart series selected."/>
                                 <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
                                     <Border BorderBrush="#333" BorderThickness="1" Padding="6" Background="#111">
-                                <Canvas Width="1000" Height="500" Background="#111">
-                                    <Line X1="0" Y1="0" X2="0" Y2="499" Stroke="#444" StrokeThickness="1" />
-                                    <Line X1="0" Y1="499" X2="999" Y2="499" Stroke="#444" StrokeThickness="1" />
-                                    <ItemsControl ItemsSource="{Binding ChartSeries}">
-                                        <ItemsControl.ItemsPanel>
-                                            <ItemsPanelTemplate>
-                                                <Canvas />
-                                            </ItemsPanelTemplate>
+                                        <Canvas Width="1000" Height="500" Background="#111">
+                                            <Line X1="0" Y1="0" X2="0" Y2="499" Stroke="#444" StrokeThickness="1" />
+                                            <Line X1="0" Y1="499" X2="999" Y2="499" Stroke="#444" StrokeThickness="1" />
+                                            <Line X1="0" Y1="250" X2="999" Y2="250" Stroke="#2A2A2A" StrokeThickness="1" />
+                                            <Line X1="500" Y1="0" X2="500" Y2="499" Stroke="#2A2A2A" StrokeThickness="1" />
+                                            <TextBlock Canvas.Left="6" Canvas.Top="6" Foreground="#777" FontSize="12" Text="Y" />
+                                            <TextBlock Canvas.Left="980" Canvas.Top="482" Foreground="#777" FontSize="12" Text="X" />
+                                            <ItemsControl ItemsSource="{Binding ChartSeries}">
+                                                <ItemsControl.ItemsPanel>
+                                                    <ItemsPanelTemplate>
+                                                        <Canvas />
+                                                    </ItemsPanelTemplate>
                                         </ItemsControl.ItemsPanel>
                                                 <ItemsControl.ItemTemplate>
                                                     <DataTemplate>

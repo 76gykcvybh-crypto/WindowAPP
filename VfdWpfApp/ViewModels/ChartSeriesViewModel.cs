@@ -13,6 +13,9 @@ public sealed class ChartSeriesViewModel : NotifyBase
     private PointCollection _points = new();
     public PointCollection Points { get => _points; private set => Set(ref _points, value); }
 
+    private double _scale = 1.0;
+    public double Scale { get => _scale; set => Set(ref _scale, Math.Max(0.0001, value)); }
+
     public ChartSeriesViewModel(string label, Brush stroke)
     {
         Label = label;
@@ -36,7 +39,8 @@ public sealed class ChartSeriesViewModel : NotifyBase
         for (int i = 0; i < samples.Count; i++)
         {
             double x = i * xStep;
-            double normalized = (samples[i] - min) / range;
+            double scaled = samples[i] * Scale;
+            double normalized = (scaled - min) / range;
             double y = usableHeight - (normalized * usableHeight);
             points.Add(new Point(x, y));
         }
