@@ -35,8 +35,8 @@
             <DataGrid.Columns>
                 <DataGridTextColumn Header="Address" Binding="{Binding AddressHex}" Width="90" IsReadOnly="True"/>
                 <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="*" IsReadOnly="True"/>
-                <DataGridTextColumn Header="Scale" Binding="{Binding ChartScale}" Width="90"/>
-                <DataGridTextColumn Header="Offset" Binding="{Binding ChartOffset}" Width="90"/>
+                <DataGridTextColumn Header="Scale" Binding="{Binding ChartScale, UpdateSourceTrigger=PropertyChanged}" Width="90"/>
+                <DataGridTextColumn Header="Offset" Binding="{Binding ChartOffset, UpdateSourceTrigger=PropertyChanged}" Width="90"/>
             </DataGrid.Columns>
         </DataGrid>
 
@@ -70,12 +70,49 @@
                 <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
                     <Border BorderBrush="#333" BorderThickness="1" Padding="6" Background="#111">
                         <Canvas Width="1000" Height="500" Background="#111">
-                            <Line X1="0" Y1="0" X2="0" Y2="499" Stroke="#444" StrokeThickness="1" />
-                            <Line X1="0" Y1="499" X2="999" Y2="499" Stroke="#444" StrokeThickness="1" />
-                            <Line X1="0" Y1="250" X2="999" Y2="250" Stroke="#2A2A2A" StrokeThickness="1" />
-                            <Line X1="500" Y1="0" X2="500" Y2="499" Stroke="#2A2A2A" StrokeThickness="1" />
+                            <ItemsControl ItemsSource="{Binding XAxisGridLines}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <Canvas />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Line X1="{Binding X1}" Y1="{Binding Y1}" X2="{Binding X2}" Y2="{Binding Y2}"
+                                              Stroke="#1F1F1F" StrokeThickness="1" />
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <ItemsControl ItemsSource="{Binding YAxisGridLines}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <Canvas />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Line X1="{Binding X1}" Y1="{Binding Y1}" X2="{Binding X2}" Y2="{Binding Y2}"
+                                              Stroke="#1F1F1F" StrokeThickness="1" />
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <Line X1="0" Y1="0" X2="0" Y2="499" Stroke="#444" StrokeThickness="1.5" />
+                            <Line X1="0" Y1="499" X2="999" Y2="499" Stroke="#444" StrokeThickness="1.5" />
                             <TextBlock Canvas.Left="6" Canvas.Top="6" Foreground="#777" FontSize="12" Text="Y" />
                             <TextBlock Canvas.Left="980" Canvas.Top="482" Foreground="#777" FontSize="12" Text="X" />
+                            <ItemsControl ItemsSource="{Binding YAxisLabels}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <Canvas />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Canvas.Left="{Binding Left}" Canvas.Top="{Binding Top}"
+                                                   Foreground="#777" FontSize="11" Text="{Binding Text}" />
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
                             <ItemsControl ItemsSource="{Binding TimeAxisLabels}">
                                 <ItemsControl.ItemsPanel>
                                     <ItemsPanelTemplate>
@@ -84,7 +121,7 @@
                                 </ItemsControl.ItemsPanel>
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
-                                        <TextBlock Canvas.Left="{Binding Left}" Canvas.Top="482"
+                                        <TextBlock Canvas.Left="{Binding Left}" Canvas.Top="{Binding Top}"
                                                    Foreground="#777" FontSize="11" Text="{Binding Text}" />
                                     </DataTemplate>
                                 </ItemsControl.ItemTemplate>

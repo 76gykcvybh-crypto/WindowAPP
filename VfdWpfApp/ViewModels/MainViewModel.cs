@@ -42,6 +42,9 @@ public sealed class MainViewModel : NotifyBase, IDisposable
     public bool HasChartSeries => ChartSeries.Count > 0;
     public bool NoChartSeries => ChartSeries.Count == 0;
     public ObservableCollection<AxisLabelViewModel> TimeAxisLabels { get; } = new();
+    public ObservableCollection<AxisLabelViewModel> YAxisLabels { get; } = new();
+    public ObservableCollection<AxisLineViewModel> XAxisGridLines { get; } = new();
+    public ObservableCollection<AxisLineViewModel> YAxisGridLines { get; } = new();
 
     private readonly CollectionViewSource _pollingReadUsagesView = new();
     public ICollectionView PollingReadUsagesView => _pollingReadUsagesView.View;
@@ -59,6 +62,8 @@ public sealed class MainViewModel : NotifyBase, IDisposable
     private readonly Dictionary<ParameterUsageViewModel, List<double>> _chartSamplesMap = new();
     private readonly DispatcherTimer _chartTimer = new();
     private Window? _oscilloscopeWindow;
+    private double _chartMin;
+    private double _chartMax = 1;
 
     private const double ChartWidth = 1000;
     private const double ChartHeight = 500;
@@ -257,6 +262,9 @@ public sealed class MainViewModel : NotifyBase, IDisposable
         _chartTimer.Start();
 
         ChartSeries.CollectionChanged += OnChartSeriesChanged;
+        UpdateAxisGrid();
+        UpdateTimeAxisLabels();
+        UpdateYAxisLabels();
     }
 
     private bool IsConnected => _transport.IsOpen;
@@ -896,12 +904,16 @@ public sealed class MainViewModel : NotifyBase, IDisposable
             max = 1;
         }
 
+        _chartMin = min;
+        _chartMax = max;
+
         foreach (var (usage, series) in _chartSeriesMap)
         {
             if (_chartSamplesMap.TryGetValue(usage, out var samples))
                 series.UpdatePoints(samples, min, max, ChartWidth, ChartHeight);
         }
 
+        UpdateYAxisLabels();
         UpdateTimeAxisLabels();
     }
 
@@ -949,12 +961,55 @@ public sealed class MainViewModel : NotifyBase, IDisposable
         double window = ChartTimeWindowSeconds;
         if (window <= 0) return;
 
-        int ticks = 5;
+        int ticks = 10;
         for (int i = 0; i <= ticks; i++)
         {
             double t = -window + (window * i / ticks);
             double x = (ChartWidth - 1) * i / ticks;
-            TimeAxisLabels.Add(new AxisLabelViewModel(x, $"{t:0.#}s"));
+            double top = ChartHeight - 18;
+            TimeAxisLabels.Add(new AxisLabelViewModel(x, top, $"{t:0.#}s"));
+        }
+    }
+
+    private void UpdateYAxisLabels()
+    {
+        YAxisLabels.Clear();
+
+        double min = _chartMin;
+        double max = _chartMax;
+        if (max <= min)
+        {
+            min = 0;
+            max = 1;
+        }
+
+        int ticks = 20;
+        for (int i = 0; i <= ticks; i++)
+        {
+            double value = max - ((max - min) * i / ticks);
+            double y = (ChartHeight - 1) * i / ticks;
+            double top = Math.Max(0, y - 8);
+            YAxisLabels.Add(new AxisLabelViewModel(6, top, $"{value:0.##}"));
+        }
+    }
+
+    private void UpdateAxisGrid()
+    {
+        XAxisGridLines.Clear();
+        YAxisGridLines.Clear();
+
+        int xDivisions = 10;
+        for (int i = 0; i <= xDivisions; i++)
+        {
+            double x = (ChartWidth - 1) * i / xDivisions;
+            XAxisGridLines.Add(new AxisLineViewModel(x, 0, x, ChartHeight - 1));
+        }
+
+        int yDivisions = 20;
+        for (int i = 0; i <= yDivisions; i++)
+        {
+            double y = (ChartHeight - 1) * i / yDivisions;
+            YAxisGridLines.Add(new AxisLineViewModel(0, y, ChartWidth - 1, y));
         }
     }
 
