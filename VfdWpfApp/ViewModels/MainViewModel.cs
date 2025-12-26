@@ -1,6 +1,7 @@
 using System;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
+using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
@@ -40,6 +41,7 @@ public sealed class MainViewModel : NotifyBase, IDisposable
     public ObservableCollection<ChartSeriesViewModel> ChartSeries { get; } = new();
     public bool HasChartSeries => ChartSeries.Count > 0;
     public bool NoChartSeries => ChartSeries.Count == 0;
+    public ObservableCollection<AxisLabelViewModel> TimeAxisLabels { get; } = new();
 
     private readonly CollectionViewSource _pollingReadUsagesView = new();
     public ICollectionView PollingReadUsagesView => _pollingReadUsagesView.View;
@@ -50,14 +52,31 @@ public sealed class MainViewModel : NotifyBase, IDisposable
     private readonly CollectionViewSource _singleUsagesView = new();
     public ICollectionView SingleUsagesView => _singleUsagesView.View;
 
+    private readonly CollectionViewSource _chartSelectedUsagesView = new();
+    public ICollectionView ChartSelectedUsagesView => _chartSelectedUsagesView.View;
+
     private readonly Dictionary<ParameterUsageViewModel, ChartSeriesViewModel> _chartSeriesMap = new();
     private readonly Dictionary<ParameterUsageViewModel, List<double>> _chartSamplesMap = new();
     private readonly DispatcherTimer _chartTimer = new();
 
-    private const int ChartMaxSamples = 200;
     private const double ChartWidth = 1000;
     private const double ChartHeight = 500;
     private const int ChartRefreshIntervalMs = 100;
+    private const int ChartSeedSamples = 20;
+
+    private double _chartTimeWindowSeconds = 20;
+    public double ChartTimeWindowSeconds
+    {
+        get => _chartTimeWindowSeconds;
+        set
+        {
+            if (Set(ref _chartTimeWindowSeconds, Math.Max(1, value)))
+            {
+                UpdateChartWindow();
+                UpdateTimeAxisLabels();
+            }
+        }
+    }
 
     public string[] ParityOptions { get; } = Enum.GetNames(typeof(Parity));
     public string[] StopBitOptions { get; } = Enum.GetNames(typeof(StopBits));
@@ -223,6 +242,10 @@ public sealed class MainViewModel : NotifyBase, IDisposable
         _singleUsagesView.Source = ParameterUsages;
         _singleUsagesView.Filter += (_, e) =>
             e.Accepted = e.Item is ParameterUsageViewModel usage && usage.Mode == ParameterUsageMode.Single;
+
+        _chartSelectedUsagesView.Source = ParameterUsages;
+        _chartSelectedUsagesView.Filter += (_, e) =>
+            e.Accepted = e.Item is ParameterUsageViewModel usage && usage.IsChartSelected;
 
         LoadUsageEntries();
 
@@ -738,6 +761,9 @@ public sealed class MainViewModel : NotifyBase, IDisposable
             }
         }
 
+        if (e.PropertyName == nameof(ParameterUsageViewModel.IsChartSelected))
+            _chartSelectedUsagesView.View?.Refresh();
+
         if (!_isLoadingUsages)
             SaveUsageEntries();
     }
@@ -788,7 +814,8 @@ public sealed class MainViewModel : NotifyBase, IDisposable
         _chartSeriesMap[usage] = series;
         var samples = new List<double>(ChartMaxSamples);
         double seedValue = usage.Parameter.TryGetLastValue(out ushort value) ? value : 0;
-        for (int i = 0; i < 20; i++)
+        int seedCount = Math.Min(ChartMaxSamples, ChartSeedSamples);
+        for (int i = 0; i < seedCount; i++)
             samples.Add(seedValue);
         _chartSamplesMap[usage] = samples;
         ChartSeries.Add(series);
@@ -860,6 +887,8 @@ public sealed class MainViewModel : NotifyBase, IDisposable
             if (_chartSamplesMap.TryGetValue(usage, out var samples))
                 series.UpdatePoints(samples, min, max, ChartWidth, ChartHeight);
         }
+
+        UpdateTimeAxisLabels();
     }
 
     private Brush GetNextChartColor()
@@ -874,6 +903,45 @@ public sealed class MainViewModel : NotifyBase, IDisposable
         };
 
         return colors[_chartSeriesMap.Count % colors.Length];
+    }
+
+    private int ChartMaxSamples
+        => Math.Max(2, (int)Math.Ceiling((ChartTimeWindowSeconds * 1000) / ChartRefreshIntervalMs));
+
+    private void UpdateChartWindow()
+    {
+        foreach (var (usage, samples) in _chartSamplesMap)
+        {
+            int max = ChartMaxSamples;
+            if (samples.Count > max)
+            {
+                samples.RemoveRange(0, samples.Count - max);
+            }
+            else if (samples.Count < max)
+            {
+                double fillValue = usage.Parameter.TryGetLastValue(out ushort value) ? value : 0;
+                while (samples.Count < max)
+                    samples.Insert(0, fillValue);
+            }
+        }
+
+        UpdateChartSeries();
+    }
+
+    private void UpdateTimeAxisLabels()
+    {
+        TimeAxisLabels.Clear();
+
+        double window = ChartTimeWindowSeconds;
+        if (window <= 0) return;
+
+        int ticks = 5;
+        for (int i = 0; i <= ticks; i++)
+        {
+            double t = -window + (window * i / ticks);
+            double x = (ChartWidth - 1) * i / ticks;
+            TimeAxisLabels.Add(new AxisLabelViewModel(x, $"{t:0.#}s"));
+        }
     }
 
     private void LoadUsageEntries()
