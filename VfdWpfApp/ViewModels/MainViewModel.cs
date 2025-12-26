@@ -26,13 +26,14 @@ public sealed class MainViewModel : NotifyBase, IDisposable
 
     public ObservableCollection<string> ComPorts { get; } = new();
     public ObservableCollection<ParameterRowViewModel> Parameters { get; } = new();
+    public ObservableCollection<ParameterUsageViewModel> ParameterUsages { get; } = new();
     public ObservableCollection<LogEntryViewModel> LogEntries { get; } = new();
 
-    private readonly CollectionViewSource _pollingParametersView = new();
-    public ICollectionView PollingParametersView => _pollingParametersView.View;
+    private readonly CollectionViewSource _pollingUsagesView = new();
+    public ICollectionView PollingUsagesView => _pollingUsagesView.View;
 
-    private readonly CollectionViewSource _singleParametersView = new();
-    public ICollectionView SingleParametersView => _singleParametersView.View;
+    private readonly CollectionViewSource _singleUsagesView = new();
+    public ICollectionView SingleUsagesView => _singleUsagesView.View;
 
     public string[] ParityOptions { get; } = Enum.GetNames(typeof(Parity));
     public string[] StopBitOptions { get; } = Enum.GetNames(typeof(StopBits));
@@ -74,9 +75,6 @@ public sealed class MainViewModel : NotifyBase, IDisposable
         }
     }
 
-    private int _pollIntervalMs = 200;
-    public int PollIntervalMs { get => _pollIntervalMs; set => Set(ref _pollIntervalMs, Math.Max(20, value)); }
-
     private bool _pollEnabled;
     public bool PollEnabled
     {
@@ -117,7 +115,15 @@ public sealed class MainViewModel : NotifyBase, IDisposable
     public string SpeedRawU16 { get => _speedRawU16; set => Set(ref _speedRawU16, value); }
 
     private ParameterRowViewModel? _selectedParameter;
-    public ParameterRowViewModel? SelectedParameter { get => _selectedParameter; set => Set(ref _selectedParameter, value); }
+    public ParameterRowViewModel? SelectedParameter
+    {
+        get => _selectedParameter;
+        set
+        {
+            if (Set(ref _selectedParameter, value))
+                AddUsageCommand.RaiseCanExecuteChanged();
+        }
+    }
 
     private string _selectedWriteValueU16 = "0";
     public string SelectedWriteValueU16 { get => _selectedWriteValueU16; set => Set(ref _selectedWriteValueU16, value); }
@@ -128,6 +134,8 @@ public sealed class MainViewModel : NotifyBase, IDisposable
 
     public RelayCommand EnterOperationCommand { get; }
     public RelayCommand ReturnToSettingsCommand { get; }
+    public RelayCommand AddUsageCommand { get; }
+    public RelayCommand<ParameterUsageViewModel> RemoveUsageCommand { get; }
 
     public AsyncRelayCommand StartCommand { get; }
     public AsyncRelayCommand StopCommand { get; }
@@ -137,7 +145,7 @@ public sealed class MainViewModel : NotifyBase, IDisposable
     public AsyncRelayCommand ReadSelectedCommand { get; }
     public AsyncRelayCommand WriteSelectedCommand { get; }
 
-    public RelayCommand<ParameterRowViewModel> ExecuteSingleCommand { get; }
+    public RelayCommand<ParameterUsageViewModel> ExecuteSingleCommand { get; }
 
     public RelayCommand OpenLogFolderCommand { get; }
 
@@ -149,6 +157,8 @@ public sealed class MainViewModel : NotifyBase, IDisposable
 
         EnterOperationCommand = new RelayCommand(() => IsOperationPage = true, () => IsConnected);
         ReturnToSettingsCommand = new RelayCommand(() => IsOperationPage = false);
+        AddUsageCommand = new RelayCommand(AddUsageForSelected, () => SelectedParameter != null);
+        RemoveUsageCommand = new RelayCommand<ParameterUsageViewModel>(RemoveUsage, usage => usage != null);
 
         StartCommand = new AsyncRelayCommand(() => WriteCmdAsync(0x0001, 1, "Start motor"), () => IsConnected);
         StopCommand = new AsyncRelayCommand(() => WriteCmdAsync(0x0000, 1, "Stop motor"), () => IsConnected);
@@ -158,7 +168,7 @@ public sealed class MainViewModel : NotifyBase, IDisposable
         ReadSelectedCommand = new AsyncRelayCommand(ReadSelectedAsync, () => IsConnected && SelectedParameter != null);
         WriteSelectedCommand = new AsyncRelayCommand(WriteSelectedAsync, () => IsConnected && SelectedParameter != null);
 
-        ExecuteSingleCommand = new RelayCommand<ParameterRowViewModel>(row => _ = ExecuteSingleAsync(row), row => IsConnected);
+        ExecuteSingleCommand = new RelayCommand<ParameterUsageViewModel>(usage => _ = ExecuteSingleAsync(usage), usage => IsConnected);
 
         OpenLogFolderCommand = new RelayCommand(OpenLogFolder);
 
@@ -173,6 +183,14 @@ public sealed class MainViewModel : NotifyBase, IDisposable
 
         LoadParameterCatalog();
         RefreshPorts();
+
+        _pollingUsagesView.Source = ParameterUsages;
+        _pollingUsagesView.Filter += (_, e) =>
+            e.Accepted = e.Item is ParameterUsageViewModel usage && usage.Mode == ParameterUsageMode.Polling;
+
+        _singleUsagesView.Source = ParameterUsages;
+        _singleUsagesView.Filter += (_, e) =>
+            e.Accepted = e.Item is ParameterUsageViewModel usage && usage.Mode == ParameterUsageMode.Single;
     }
 
     private bool IsConnected => _transport.IsOpen;
@@ -188,6 +206,7 @@ public sealed class MainViewModel : NotifyBase, IDisposable
         ConnectCommand.RaiseCanExecuteChanged();
         DisconnectCommand.RaiseCanExecuteChanged();
         EnterOperationCommand.RaiseCanExecuteChanged();
+        AddUsageCommand.RaiseCanExecuteChanged();
     }
 
     private void LoadParameterCatalog()
@@ -198,20 +217,9 @@ public sealed class MainViewModel : NotifyBase, IDisposable
             _catalog = ParameterCatalog.LoadFromJson(jsonPath);
 
             Parameters.Clear();
+            ParameterUsages.Clear();
             foreach (var p in _catalog.Parameters)
-            {
-                var row = new ParameterRowViewModel(p);
-                row.PropertyChanged += OnParameterRowPropertyChanged;
-                Parameters.Add(row);
-            }
-
-            _pollingParametersView.Source = Parameters;
-            _pollingParametersView.Filter += (_, e) =>
-                e.Accepted = e.Item is ParameterRowViewModel row && row.UsageMode == ParameterUsageMode.Polling;
-
-            _singleParametersView.Source = Parameters;
-            _singleParametersView.Filter += (_, e) =>
-                e.Accepted = e.Item is ParameterRowViewModel row && row.UsageMode == ParameterUsageMode.Single;
+                Parameters.Add(new ParameterRowViewModel(p));
 
             FooterStatus = $"Loaded parameters: {Parameters.Count}";
         }
@@ -259,6 +267,7 @@ public sealed class MainViewModel : NotifyBase, IDisposable
             DisconnectCommand.RaiseCanExecuteChanged();
             EnterOperationCommand.RaiseCanExecuteChanged();
             ExecuteSingleCommand.RaiseCanExecuteChanged();
+            AddUsageCommand.RaiseCanExecuteChanged();
         }
         catch (Exception ex)
         {
@@ -287,6 +296,7 @@ public sealed class MainViewModel : NotifyBase, IDisposable
         DisconnectCommand.RaiseCanExecuteChanged();
         EnterOperationCommand.RaiseCanExecuteChanged();
         ExecuteSingleCommand.RaiseCanExecuteChanged();
+        AddUsageCommand.RaiseCanExecuteChanged();
     }
 
     private async Task WriteCmdAsync(ushort addr, ushort value, string label)
@@ -379,34 +389,40 @@ public sealed class MainViewModel : NotifyBase, IDisposable
         }
     }
 
-    private async Task ExecuteSingleAsync(ParameterRowViewModel? row)
+    private async Task ExecuteSingleAsync(ParameterUsageViewModel? usage)
     {
-        if (_client is null || row is null) return;
+        if (_client is null || usage is null) return;
 
-        if (row.SingleAction == ParameterActionType.Read)
+        if (usage.Mode != ParameterUsageMode.Single)
         {
-            await ExecuteReadAsync(row, "Single read").ConfigureAwait(false);
+            FooterStatus = "Selected usage is not Single.";
             return;
         }
 
-        await ExecuteWriteAsync(row, "Single write").ConfigureAwait(false);
+        if (usage.Action == ParameterActionType.Read)
+        {
+            await ExecuteReadAsync(usage, "Single read").ConfigureAwait(false);
+            return;
+        }
+
+        await ExecuteWriteAsync(usage, "Single write").ConfigureAwait(false);
     }
 
-    private async Task ExecuteReadAsync(ParameterRowViewModel row, string label)
+    private async Task ExecuteReadAsync(ParameterUsageViewModel usage, string label)
     {
         if (_client is null) return;
 
         try
         {
-            ushort addr = (ushort)row.Def.Address;
+            ushort addr = (ushort)usage.Parameter.Def.Address;
             var res = await _client.ReadAsync(addr, 1, CancellationToken.None).ConfigureAwait(false);
             ushort v = res.GetWord(0);
 
-            Application.Current.Dispatcher.Invoke(() => row.SetLastValue(v));
+            Application.Current.Dispatcher.Invoke(() => usage.Parameter.SetLastValue(v));
 
             string parsed = BuildParsedParameter(addr, v);
             AddLog(LogDirection.RX, Array.Empty<byte>(), parsed, $"{label} OK RTT={res.RttMs:0.0}ms", res.RttMs);
-            FooterStatus = $"{label} {row.AddressHex} OK, value={v} (0x{v:X4})";
+            FooterStatus = $"{label} {usage.AddressHex} OK, value={v} (0x{v:X4})";
         }
         catch (TimeoutException tex)
         {
@@ -418,17 +434,17 @@ public sealed class MainViewModel : NotifyBase, IDisposable
         }
     }
 
-    private async Task ExecuteWriteAsync(ParameterRowViewModel row, string label)
+    private async Task ExecuteWriteAsync(ParameterUsageViewModel usage, string label)
     {
         if (_client is null) return;
 
-        if (row.Access.Equals("RO", StringComparison.OrdinalIgnoreCase))
+        if (usage.Access.Equals("RO", StringComparison.OrdinalIgnoreCase))
         {
             FooterStatus = "Selected parameter is Read-Only.";
             return;
         }
 
-        if (!TryGetWriteValue(row, out ushort raw, out string error))
+        if (!TryGetWriteValue(usage, out ushort raw, out string error))
         {
             FooterStatus = error;
             return;
@@ -436,9 +452,9 @@ public sealed class MainViewModel : NotifyBase, IDisposable
 
         try
         {
-            ushort addr = (ushort)row.Def.Address;
+            ushort addr = (ushort)usage.Parameter.Def.Address;
             var res = await _client.WriteSingleAsync(addr, raw, CancellationToken.None).ConfigureAwait(false);
-            FooterStatus = $"{label} {row.AddressHex} OK, RTT={res.RttMs:0.0}ms";
+            FooterStatus = $"{label} {usage.AddressHex} OK, RTT={res.RttMs:0.0}ms";
         }
         catch (TimeoutException tex)
         {
@@ -450,9 +466,9 @@ public sealed class MainViewModel : NotifyBase, IDisposable
         }
     }
 
-    private bool TryGetWriteValue(ParameterRowViewModel row, out ushort value, out string error)
+    private bool TryGetWriteValue(ParameterUsageViewModel usage, out ushort value, out string error)
     {
-        if (!ushort.TryParse(row.WriteValueU16, out value))
+        if (!ushort.TryParse(usage.WriteValueU16, out value))
         {
             error = "Write U16 must be 0..65535";
             return false;
@@ -547,18 +563,18 @@ public sealed class MainViewModel : NotifyBase, IDisposable
             while (_pollTimer != null && await _pollTimer.WaitForNextTickAsync(ct).ConfigureAwait(false))
             {
                 var now = Stopwatch.GetTimestamp();
-                var polling = Parameters.Where(p => p.UsageMode == ParameterUsageMode.Polling).ToList();
-                foreach (var row in polling)
+                var polling = ParameterUsages.Where(p => p.Mode == ParameterUsageMode.Polling).ToList();
+                foreach (var usage in polling)
                 {
-                    int interval = Math.Max(20, row.PollIntervalMs);
-                    if (row.LastPollTick != 0)
+                    int interval = Math.Max(20, usage.PollIntervalMs);
+                    if (usage.LastPollTick != 0)
                     {
-                        double elapsedMs = (now - row.LastPollTick) * 1000.0 / Stopwatch.Frequency;
+                        double elapsedMs = (now - usage.LastPollTick) * 1000.0 / Stopwatch.Frequency;
                         if (elapsedMs < interval) continue;
                     }
 
-                    row.LastPollTick = now;
-                    await PollParameterAsync(row, ct).ConfigureAwait(false);
+                    usage.LastPollTick = now;
+                    await PollParameterAsync(usage, ct).ConfigureAwait(false);
                 }
             }
         }
@@ -572,53 +588,87 @@ public sealed class MainViewModel : NotifyBase, IDisposable
         }
     }
 
-    private async Task PollParameterAsync(ParameterRowViewModel row, CancellationToken ct)
+    private async Task PollParameterAsync(ParameterUsageViewModel usage, CancellationToken ct)
     {
         if (_client is null) return;
 
         try
         {
-            ushort addr = (ushort)row.Def.Address;
-            if (row.PollAction == ParameterActionType.Read)
+            ushort addr = (ushort)usage.Parameter.Def.Address;
+            if (usage.Action == ParameterActionType.Read)
             {
                 var res = await _client.ReadAsync(addr, 1, ct).ConfigureAwait(false);
                 ushort v = res.GetWord(0);
 
-                Application.Current.Dispatcher.Invoke(() => row.SetLastValue(v));
+                Application.Current.Dispatcher.Invoke(() => usage.Parameter.SetLastValue(v));
 
                 string parsed = BuildParsedParameter(addr, v);
                 AddLog(LogDirection.RX, Array.Empty<byte>(), $"Poll {parsed}", "OK", res.RttMs);
             }
             else
             {
-                if (row.Access.Equals("RO", StringComparison.OrdinalIgnoreCase))
+                if (usage.Access.Equals("RO", StringComparison.OrdinalIgnoreCase))
                 {
                     AddLog(LogDirection.RX, Array.Empty<byte>(), $"Poll {addr:X4}", "SKIP (RO)", null);
                     return;
                 }
 
-                if (!TryGetWriteValue(row, out ushort raw, out _))
+                if (!TryGetWriteValue(usage, out ushort raw, out _))
                 {
                     AddLog(LogDirection.RX, Array.Empty<byte>(), $"Poll {addr:X4}", "INVALID WRITE", null);
                     return;
                 }
 
                 var res = await _client.WriteSingleAsync(addr, raw, ct).ConfigureAwait(false);
-                AddLog(LogDirection.RX, Array.Empty<byte>(), $"Poll write {row.AddressHex} = {raw}", "OK", res.RttMs);
+                AddLog(LogDirection.RX, Array.Empty<byte>(), $"Poll write {usage.AddressHex} = {raw}", "OK", res.RttMs);
             }
         }
         catch (TimeoutException)
         {
-            AddLog(LogDirection.RX, Array.Empty<byte>(), $"Poll {row.AddressHex}", "TIMEOUT", null);
+            AddLog(LogDirection.RX, Array.Empty<byte>(), $"Poll {usage.AddressHex}", "TIMEOUT", null);
         }
     }
 
-    private void OnParameterRowPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    private void AddUsageForSelected()
     {
-        if (e.PropertyName == nameof(ParameterRowViewModel.UsageMode))
+        if (SelectedParameter is null)
         {
-            _pollingParametersView.View?.Refresh();
-            _singleParametersView.View?.Refresh();
+            FooterStatus = "Select a parameter first.";
+            return;
+        }
+
+        var usage = new ParameterUsageViewModel(SelectedParameter);
+        RegisterUsage(usage);
+        SelectedParameter.Usages.Add(usage);
+        FooterStatus = $"Added usage for {SelectedParameter.AddressHex}.";
+    }
+
+    private void RemoveUsage(ParameterUsageViewModel? usage)
+    {
+        if (usage is null) return;
+
+        usage.Parameter.Usages.Remove(usage);
+        UnregisterUsage(usage);
+    }
+
+    private void RegisterUsage(ParameterUsageViewModel usage)
+    {
+        usage.PropertyChanged += OnUsagePropertyChanged;
+        ParameterUsages.Add(usage);
+    }
+
+    private void UnregisterUsage(ParameterUsageViewModel usage)
+    {
+        usage.PropertyChanged -= OnUsagePropertyChanged;
+        ParameterUsages.Remove(usage);
+    }
+
+    private void OnUsagePropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(ParameterUsageViewModel.Mode))
+        {
+            _pollingUsagesView.View?.Refresh();
+            _singleUsagesView.View?.Refresh();
         }
     }
 
