@@ -773,7 +773,11 @@ public sealed class MainViewModel : NotifyBase, IDisposable
         var color = GetNextChartColor();
         var series = new ChartSeriesViewModel($"{usage.AddressHex} {usage.Name}", color);
         _chartSeriesMap[usage] = series;
-        _chartSamplesMap[usage] = new List<double>(ChartMaxSamples);
+        var samples = new List<double>(ChartMaxSamples);
+        double seedValue = usage.Parameter.TryGetLastValue(out ushort value) ? value : 0;
+        for (int i = 0; i < 20; i++)
+            samples.Add(seedValue);
+        _chartSamplesMap[usage] = samples;
         ChartSeries.Add(series);
         UpdateChartSeries();
     }
