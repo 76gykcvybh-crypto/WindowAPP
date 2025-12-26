@@ -37,6 +37,9 @@ public sealed class ParameterUsageViewModel : NotifyBase
     private double _chartScale = 1.0;
     public double ChartScale { get => _chartScale; set => Set(ref _chartScale, Math.Max(0.0001, value)); }
 
+    private double _chartOffset;
+    public double ChartOffset { get => _chartOffset; set => Set(ref _chartOffset, value); }
+
     private bool _isChartSelected;
     public bool IsChartSelected { get => _isChartSelected; set => Set(ref _isChartSelected, value); }
 

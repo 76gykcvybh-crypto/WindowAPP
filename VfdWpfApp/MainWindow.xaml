@@ -358,106 +358,12 @@
                 </TabItem>
 
                 <TabItem Header="Oscilloscope">
-                    <Grid Margin="10">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="*"/>
-                        </Grid.RowDefinitions>
-
-                        <StackPanel Grid.Row="0" Orientation="Horizontal">
-                            <TextBlock VerticalAlignment="Center" Foreground="#666" Text="Select up to 5 polling read items (Chart checkbox) to plot." />
-                        </StackPanel>
-
-                        <Grid Grid.Row="1" Margin="0,10,0,0">
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="*"/>
-                            </Grid.RowDefinitions>
-
-                            <WrapPanel Grid.Row="0" Margin="0,0,0,8">
-                                <TextBlock VerticalAlignment="Center" Foreground="#666" Text="Time window (s):" />
-                                <TextBox Width="80" Margin="6,0,0,0" Text="{Binding ChartTimeWindowSeconds}" />
-                            </WrapPanel>
-
-                            <DataGrid Grid.Row="1"
-                                      ItemsSource="{Binding ChartSelectedUsagesView}"
-                                      AutoGenerateColumns="False"
-                                      IsReadOnly="False"
-                                      CanUserAddRows="False"
-                                      HeadersVisibility="Column"
-                                      GridLinesVisibility="Horizontal"
-                                      RowHeaderWidth="0"
-                                      Margin="0,0,0,8">
-                                <DataGrid.Columns>
-                                    <DataGridTextColumn Header="Address" Binding="{Binding AddressHex}" Width="90" IsReadOnly="True"/>
-                                    <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="*" IsReadOnly="True"/>
-                                    <DataGridTextColumn Header="Scale" Binding="{Binding ChartScale}" Width="90"/>
-                                </DataGrid.Columns>
-                            </DataGrid>
-
-                            <ItemsControl Grid.Row="2" ItemsSource="{Binding ChartSeries}">
-                                <ItemsControl.ItemsPanel>
-                                    <ItemsPanelTemplate>
-                                        <StackPanel Orientation="Horizontal" />
-                                    </ItemsPanelTemplate>
-                                </ItemsControl.ItemsPanel>
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate>
-                                        <StackPanel Orientation="Horizontal" Margin="0,0,10,0">
-                                            <Rectangle Width="12" Height="12" Fill="{Binding Stroke}" Margin="0,0,6,0"/>
-                                            <TextBlock Text="{Binding Label}" />
-                                        </StackPanel>
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
-
-                            <Grid Grid.Row="3" Margin="0,8,0,0">
-                                <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center"
-                                           Visibility="{Binding NoChartSeries, Converter={StaticResource BoolToVis}}"
-                                           Foreground="#888" FontSize="16"
-                                           Text="No chart series selected."/>
-                                <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
-                                    <Border BorderBrush="#333" BorderThickness="1" Padding="6" Background="#111">
-                                        <Canvas Width="1000" Height="500" Background="#111">
-                                            <Line X1="0" Y1="0" X2="0" Y2="499" Stroke="#444" StrokeThickness="1" />
-                                            <Line X1="0" Y1="499" X2="999" Y2="499" Stroke="#444" StrokeThickness="1" />
-                                            <Line X1="0" Y1="250" X2="999" Y2="250" Stroke="#2A2A2A" StrokeThickness="1" />
-                                            <Line X1="500" Y1="0" X2="500" Y2="499" Stroke="#2A2A2A" StrokeThickness="1" />
-                                            <TextBlock Canvas.Left="6" Canvas.Top="6" Foreground="#777" FontSize="12" Text="Y" />
-                                            <TextBlock Canvas.Left="980" Canvas.Top="482" Foreground="#777" FontSize="12" Text="X" />
-                                            <ItemsControl ItemsSource="{Binding TimeAxisLabels}">
-                                                <ItemsControl.ItemsPanel>
-                                                    <ItemsPanelTemplate>
-                                                        <Canvas />
-                                                    </ItemsPanelTemplate>
-                                                </ItemsControl.ItemsPanel>
-                                                <ItemsControl.ItemTemplate>
-                                                    <DataTemplate>
-                                                        <TextBlock Canvas.Left="{Binding Left}" Canvas.Top="482"
-                                                                   Foreground="#777" FontSize="11" Text="{Binding Text}" />
-                                                    </DataTemplate>
-                                                </ItemsControl.ItemTemplate>
-                                            </ItemsControl>
-                                            <ItemsControl ItemsSource="{Binding ChartSeries}">
-                                                <ItemsControl.ItemsPanel>
-                                                    <ItemsPanelTemplate>
-                                                        <Canvas />
-                                                    </ItemsPanelTemplate>
-                                        </ItemsControl.ItemsPanel>
-                                                <ItemsControl.ItemTemplate>
-                                                    <DataTemplate>
-                                                <Polyline Points="{Binding Points}" Stroke="{Binding Stroke}" StrokeThickness="2"/>
-                                            </DataTemplate>
-                                        </ItemsControl.ItemTemplate>
-                                    </ItemsControl>
-                                </Canvas>
-                            </Border>
-                                </ScrollViewer>
-                            </Grid>
-                        </Grid>
-                    </Grid>
+                    <StackPanel Margin="10">
+                        <TextBlock Foreground="#666"
+                                   Text="The oscilloscope opens in a dedicated window for better viewing." />
+                        <Button Margin="0,10,0,0" Width="220" Content="Open Oscilloscope Window"
+                                Command="{Binding OpenOscilloscopeCommand}" />
+                    </StackPanel>
                 </TabItem>
 
                 <TabItem Header="Console Log">

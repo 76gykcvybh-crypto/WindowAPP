@@ -16,6 +16,9 @@ public sealed class ChartSeriesViewModel : NotifyBase
     private double _scale = 1.0;
     public double Scale { get => _scale; set => Set(ref _scale, Math.Max(0.0001, value)); }
 
+    private double _offset;
+    public double Offset { get => _offset; set => Set(ref _offset, value); }
+
     public ChartSeriesViewModel(string label, Brush stroke)
     {
         Label = label;
@@ -39,7 +42,7 @@ public sealed class ChartSeriesViewModel : NotifyBase
         for (int i = 0; i < samples.Count; i++)
         {
             double x = i * xStep;
-            double scaled = samples[i] * Scale;
+            double scaled = samples[i] * Scale + Offset;
             double normalized = (scaled - min) / range;
             double y = usableHeight - (normalized * usableHeight);
             points.Add(new Point(x, y));

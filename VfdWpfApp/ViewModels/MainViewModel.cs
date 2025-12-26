@@ -58,6 +58,7 @@ public sealed class MainViewModel : NotifyBase, IDisposable
     private readonly Dictionary<ParameterUsageViewModel, ChartSeriesViewModel> _chartSeriesMap = new();
     private readonly Dictionary<ParameterUsageViewModel, List<double>> _chartSamplesMap = new();
     private readonly DispatcherTimer _chartTimer = new();
+    private Window? _oscilloscopeWindow;
 
     private const double ChartWidth = 1000;
     private const double ChartHeight = 500;
@@ -179,6 +180,7 @@ public sealed class MainViewModel : NotifyBase, IDisposable
     public RelayCommand ReturnToSettingsCommand { get; }
     public RelayCommand AddUsageCommand { get; }
     public RelayCommand<ParameterUsageViewModel> RemoveUsageCommand { get; }
+    public RelayCommand OpenOscilloscopeCommand { get; }
 
     public AsyncRelayCommand StartCommand { get; }
     public AsyncRelayCommand StopCommand { get; }
@@ -202,6 +204,7 @@ public sealed class MainViewModel : NotifyBase, IDisposable
         ReturnToSettingsCommand = new RelayCommand(() => IsOperationPage = false);
         AddUsageCommand = new RelayCommand(AddUsageForSelected, () => SelectedParameter != null);
         RemoveUsageCommand = new RelayCommand<ParameterUsageViewModel>(RemoveUsage, usage => usage != null);
+        OpenOscilloscopeCommand = new RelayCommand(OpenOscilloscopeWindow);
 
         StartCommand = new AsyncRelayCommand(() => WriteCmdAsync(0x0001, 1, "Start motor"), () => IsConnected);
         StopCommand = new AsyncRelayCommand(() => WriteCmdAsync(0x0000, 1, "Stop motor"), () => IsConnected);
@@ -761,6 +764,16 @@ public sealed class MainViewModel : NotifyBase, IDisposable
             }
         }
 
+        if (e.PropertyName == nameof(ParameterUsageViewModel.ChartOffset))
+        {
+            if (sender is ParameterUsageViewModel usage
+                && _chartSeriesMap.TryGetValue(usage, out var series))
+            {
+                series.Offset = usage.ChartOffset;
+                UpdateChartSeries();
+            }
+        }
+
         if (e.PropertyName == nameof(ParameterUsageViewModel.IsChartSelected))
             _chartSelectedUsagesView.View?.Refresh();
 
@@ -809,7 +822,8 @@ public sealed class MainViewModel : NotifyBase, IDisposable
         var color = GetNextChartColor();
         var series = new ChartSeriesViewModel($"{usage.AddressHex} {usage.Name}", color)
         {
-            Scale = usage.ChartScale
+            Scale = usage.ChartScale,
+            Offset = usage.ChartOffset
         };
         _chartSeriesMap[usage] = series;
         var samples = new List<double>(ChartMaxSamples);
@@ -870,7 +884,7 @@ public sealed class MainViewModel : NotifyBase, IDisposable
         {
             foreach (double v in samples)
             {
-                double scaled = v * usage.ChartScale;
+                double scaled = v * usage.ChartScale + usage.ChartOffset;
                 if (scaled < min) min = scaled;
                 if (scaled > max) max = scaled;
             }
@@ -974,7 +988,8 @@ public sealed class MainViewModel : NotifyBase, IDisposable
                 PollIntervalMs = entry.PollIntervalMs,
                 WriteValueU16 = entry.WriteValueU16,
                 IsChartSelected = entry.IsChartSelected,
-                ChartScale = entry.ChartScale
+                ChartScale = entry.ChartScale,
+                ChartOffset = entry.ChartOffset
             };
                 RegisterUsage(usage);
                 param.Usages.Add(usage);
@@ -1001,7 +1016,8 @@ public sealed class MainViewModel : NotifyBase, IDisposable
                 usage.PollIntervalMs,
                 usage.WriteValueU16,
                 usage.IsChartSelected,
-                usage.ChartScale
+                usage.ChartScale,
+                usage.ChartOffset
             )).ToList();
 
             var json = JsonSerializer.Serialize(entries, new JsonSerializerOptions { WriteIndented = true });
@@ -1020,8 +1036,26 @@ public sealed class MainViewModel : NotifyBase, IDisposable
         int PollIntervalMs,
         string WriteValueU16,
         bool IsChartSelected,
-        double ChartScale
+        double ChartScale,
+        double ChartOffset
     );
+
+    private void OpenOscilloscopeWindow()
+    {
+        if (_oscilloscopeWindow != null)
+        {
+            _oscilloscopeWindow.Activate();
+            return;
+        }
+
+        var window = new VfdWpfApp.OscilloscopeWindow
+        {
+            DataContext = this
+        };
+        window.Closed += (_, _) => _oscilloscopeWindow = null;
+        _oscilloscopeWindow = window;
+        window.Show();
+    }
 
     public void Dispose()
     {
