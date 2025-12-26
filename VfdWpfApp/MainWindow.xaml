@@ -4,186 +4,326 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:vm="clr-namespace:VfdWpfApp.ViewModels"
+        xmlns:sys="clr-namespace:System;assembly=System.Runtime"
         mc:Ignorable="d"
         Title="VFD Window App" Height="820" Width="1180"
         WindowStartupLocation="CenterScreen">
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis" />
+        <ObjectDataProvider x:Key="UsageModes" MethodName="GetValues" ObjectType="{x:Type sys:Enum}">
+            <ObjectDataProvider.MethodParameters>
+                <x:Type TypeName="vm:ParameterUsageMode" />
+            </ObjectDataProvider.MethodParameters>
+        </ObjectDataProvider>
+        <ObjectDataProvider x:Key="ActionTypes" MethodName="GetValues" ObjectType="{x:Type sys:Enum}">
+            <ObjectDataProvider.MethodParameters>
+                <x:Type TypeName="vm:ParameterActionType" />
+            </ObjectDataProvider.MethodParameters>
+        </ObjectDataProvider>
+    </Window.Resources>
+
     <Window.DataContext>
         <vm:MainViewModel />
     </Window.DataContext>
 
     <Grid Margin="12">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
-        </Grid.RowDefinitions>
+        <!-- Settings Page -->
+        <Grid Visibility="{Binding IsSettingsPage, Converter={StaticResource BoolToVis}}">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
 
-        <!-- Top: Connection + settings -->
-        <Border Grid.Row="0" BorderBrush="#DDD" BorderThickness="1" CornerRadius="6" Padding="10">
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="1.25*"/>
-                    <ColumnDefinition Width="1.5*"/>
-                    <ColumnDefinition Width="1*"/>
-                </Grid.ColumnDefinitions>
-
-                <!-- Connection -->
-                <StackPanel Grid.Column="0" Orientation="Vertical">
-                    <TextBlock FontSize="16" FontWeight="SemiBold" Text="Connection"/>
-                    <WrapPanel Margin="0,8,0,0" VerticalAlignment="Center">
-                        <TextBlock Text="COM:" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                        <ComboBox Width="120" ItemsSource="{Binding ComPorts}" SelectedItem="{Binding SelectedComPort}" />
-                        <Button Margin="8,0,0,0" Content="Refresh" Command="{Binding RefreshPortsCommand}" />
-                    </WrapPanel>
-
-                    <WrapPanel Margin="0,8,0,0">
-                        <TextBlock Text="Baud:" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                        <TextBox Width="90" Text="{Binding BaudRate}" />
-                        <TextBlock Text="Parity:" VerticalAlignment="Center" Margin="10,0,6,0"/>
-                        <ComboBox Width="90" ItemsSource="{Binding ParityOptions}" SelectedItem="{Binding SelectedParity}" />
-                        <TextBlock Text="Data:" VerticalAlignment="Center" Margin="10,0,6,0"/>
-                        <TextBox Width="50" Text="{Binding DataBits}" />
-                        <TextBlock Text="Stop:" VerticalAlignment="Center" Margin="10,0,6,0"/>
-                        <ComboBox Width="90" ItemsSource="{Binding StopBitOptions}" SelectedItem="{Binding SelectedStopBits}" />
-                    </WrapPanel>
-
-                    <WrapPanel Margin="0,10,0,0">
-                        <Button Width="120" Content="Connect" Command="{Binding ConnectCommand}" />
-                        <Button Width="120" Margin="10,0,0,0" Content="Disconnect" Command="{Binding DisconnectCommand}" />
-                        <TextBlock Margin="12,0,0,0" VerticalAlignment="Center" Text="{Binding StatusText}"/>
-                    </WrapPanel>
-                </StackPanel>
-
-                <!-- Timing -->
-                <StackPanel Grid.Column="1" Orientation="Vertical" Margin="14,0,0,0">
-                    <TextBlock FontSize="16" FontWeight="SemiBold" Text="Timing (ms)"/>
-                    <WrapPanel Margin="0,8,0,0">
-                        <TextBlock Text="Timeout:" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                        <TextBox Width="70" Text="{Binding ResponseTimeoutMs}" />
-                        <TextBlock Text="Min gap:" VerticalAlignment="Center" Margin="10,0,6,0"/>
-                        <TextBox Width="70" Text="{Binding InterCommandDelayMs}" />
-                        <TextBlock Text="Polling:" VerticalAlignment="Center" Margin="10,0,6,0"/>
-                        <TextBox Width="70" Text="{Binding PollIntervalMs}" />
-                        <CheckBox Margin="10,0,0,0" Content="Enable polling" IsChecked="{Binding PollEnabled}" />
-                    </WrapPanel>
-                    <TextBlock Margin="0,6,0,0" Foreground="#666"
-                               Text="Note: Device drops commands if sent too fast; Min gap is enforced by the app."/>
-                </StackPanel>
-
-                <!-- Quick control -->
-                <StackPanel Grid.Column="2" Orientation="Vertical" Margin="14,0,0,0">
-                    <TextBlock FontSize="16" FontWeight="SemiBold" Text="Quick Control"/>
-                    <WrapPanel Margin="0,8,0,0">
-                        <Button Width="120" Content="Start" Command="{Binding StartCommand}" />
-                        <Button Width="120" Margin="10,0,0,0" Content="Stop" Command="{Binding StopCommand}" />
-                    </WrapPanel>
-                    <WrapPanel Margin="0,8,0,0">
-                        <Button Width="250" Content="Shutdown (Write 1 @0x000B)" Command="{Binding ShutdownCommand}" />
-                    </WrapPanel>
-
-                    <Border Margin="0,10,0,0" BorderBrush="#EEE" BorderThickness="1" Padding="8" CornerRadius="6">
-                        <StackPanel>
-                            <TextBlock FontWeight="SemiBold" Text="Set Speed Command (0x000A)"/>
-                            <WrapPanel Margin="0,6,0,0">
-                                <TextBlock Text="Raw U16:" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                                <TextBox Width="90" Text="{Binding SpeedRawU16}" />
-                                <Button Margin="10,0,0,0" Width="120" Content="Write" Command="{Binding SetSpeedCommand}" />
-                            </WrapPanel>
-                            <TextBlock Margin="0,6,0,0" Foreground="#666"
-                                       Text="Raw value is 2 bytes. If you want scaling (0.01Hz), we can add later once confirmed."/>
-                        </StackPanel>
-                    </Border>
-                </StackPanel>
-            </Grid>
-        </Border>
-
-        <!-- Main tabs -->
-        <TabControl Grid.Row="1" Margin="0,12,0,0">
-            <TabItem Header="Parameters">
-                <Grid Margin="10">
+            <Border Grid.Row="0" BorderBrush="#DDD" BorderThickness="1" CornerRadius="6" Padding="10">
+                <Grid>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="1.8*"/>
+                        <ColumnDefinition Width="1.4*"/>
+                        <ColumnDefinition Width="1.1*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Connection -->
+                    <StackPanel Grid.Column="0" Orientation="Vertical">
+                        <TextBlock FontSize="16" FontWeight="SemiBold" Text="Connection"/>
+                        <WrapPanel Margin="0,8,0,0" VerticalAlignment="Center">
+                            <TextBlock Text="COM:" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                            <ComboBox Width="120" ItemsSource="{Binding ComPorts}" SelectedItem="{Binding SelectedComPort}" />
+                            <Button Margin="8,0,0,0" Content="Refresh" Command="{Binding RefreshPortsCommand}" />
+                        </WrapPanel>
+
+                        <WrapPanel Margin="0,8,0,0">
+                            <TextBlock Text="Baud:" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                            <TextBox Width="90" Text="{Binding BaudRate}" />
+                            <TextBlock Text="Parity:" VerticalAlignment="Center" Margin="10,0,6,0"/>
+                            <ComboBox Width="90" ItemsSource="{Binding ParityOptions}" SelectedItem="{Binding SelectedParity}" />
+                            <TextBlock Text="Data:" VerticalAlignment="Center" Margin="10,0,6,0"/>
+                            <TextBox Width="50" Text="{Binding DataBits}" />
+                            <TextBlock Text="Stop:" VerticalAlignment="Center" Margin="10,0,6,0"/>
+                            <ComboBox Width="90" ItemsSource="{Binding StopBitOptions}" SelectedItem="{Binding SelectedStopBits}" />
+                        </WrapPanel>
+
+                        <WrapPanel Margin="0,10,0,0">
+                            <Button Width="120" Content="Connect" Command="{Binding ConnectCommand}" />
+                            <Button Width="120" Margin="10,0,0,0" Content="Disconnect" Command="{Binding DisconnectCommand}" />
+                            <TextBlock Margin="12,0,0,0" VerticalAlignment="Center" Text="{Binding StatusText}"/>
+                        </WrapPanel>
+                    </StackPanel>
+
+                    <!-- Timing + Start -->
+                    <StackPanel Grid.Column="1" Orientation="Vertical" Margin="14,0,0,0">
+                        <TextBlock FontSize="16" FontWeight="SemiBold" Text="Timing (ms)"/>
+                        <WrapPanel Margin="0,8,0,0">
+                            <TextBlock Text="Timeout:" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                            <TextBox Width="70" Text="{Binding ResponseTimeoutMs}" />
+                            <TextBlock Text="Min gap:" VerticalAlignment="Center" Margin="10,0,6,0"/>
+                            <TextBox Width="70" Text="{Binding InterCommandDelayMs}" />
+                        </WrapPanel>
+                        <TextBlock Margin="0,6,0,0" Foreground="#666"
+                                   Text="Note: Device drops commands if sent too fast; Min gap is enforced by the app."/>
+
+                        <Button Margin="0,12,0,0" Width="200" Content="Enter Operation" Command="{Binding EnterOperationCommand}" />
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <TabControl Grid.Row="1" Margin="0,12,0,0">
+                <TabItem Header="Parameters">
+                    <Grid Margin="10">
+                        <DataGrid ItemsSource="{Binding Parameters}"
+                                  SelectedItem="{Binding SelectedParameter}"
+                                  AutoGenerateColumns="False"
+                                  IsReadOnly="False"
+                                  CanUserAddRows="False"
+                                  HeadersVisibility="Column"
+                                  GridLinesVisibility="Horizontal"
+                                  RowHeaderWidth="0">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Address" Binding="{Binding AddressHex}" Width="90" IsReadOnly="True"/>
+                                <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="*" IsReadOnly="True"/>
+                                <DataGridTextColumn Header="Access" Binding="{Binding Access}" Width="90" IsReadOnly="True"/>
+                                <DataGridTextColumn Header="Unit" Binding="{Binding Unit}" Width="120" IsReadOnly="True"/>
+                                <DataGridTemplateColumn Header="Mode" Width="120">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <ComboBox ItemsSource="{Binding Source={StaticResource UsageModes}}"
+                                                      SelectedItem="{Binding UsageMode, Mode=TwoWay}" />
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                                <DataGridTemplateColumn Header="Polling" Width="140">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <ComboBox ItemsSource="{Binding Source={StaticResource ActionTypes}}"
+                                                      SelectedItem="{Binding PollAction, Mode=TwoWay}" />
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                                <DataGridTextColumn Header="Poll (ms)" Binding="{Binding PollIntervalMs}" Width="90"/>
+                                <DataGridTemplateColumn Header="Single" Width="140">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <ComboBox ItemsSource="{Binding Source={StaticResource ActionTypes}}"
+                                                      SelectedItem="{Binding SingleAction, Mode=TwoWay}" />
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Grid>
+                </TabItem>
+
+                <TabItem Header="Console Log">
+                    <Grid Margin="10">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <WrapPanel Grid.Row="0">
+                            <Button Content="Open log folder" Command="{Binding OpenLogFolderCommand}" />
+                            <TextBlock Margin="10,0,0,0" VerticalAlignment="Center" Foreground="#666" Text="{Binding CurrentLogFileHint}"/>
+                        </WrapPanel>
+
+                        <DataGrid Grid.Row="1" Margin="0,10,0,0"
+                                  ItemsSource="{Binding LogEntries}"
+                                  AutoGenerateColumns="False"
+                                  IsReadOnly="True"
+                                  CanUserAddRows="False"
+                                  HeadersVisibility="Column"
+                                  GridLinesVisibility="Horizontal"
+                                  RowHeaderWidth="0">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Time" Binding="{Binding TimeLocal}" Width="160"/>
+                                <DataGridTextColumn Header="Dir" Binding="{Binding Direction}" Width="60"/>
+                                <DataGridTextColumn Header="RTT(ms)" Binding="{Binding RttMs}" Width="80"/>
+                                <DataGridTextColumn Header="HEX" Binding="{Binding Hex}" Width="380"/>
+                                <DataGridTextColumn Header="Parsed" Binding="{Binding Parsed}" Width="*"/>
+                                <DataGridTextColumn Header="Result" Binding="{Binding Result}" Width="120"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Grid>
+                </TabItem>
+            </TabControl>
+
+            <Border Grid.Row="2" Margin="0,10,0,0" Padding="8" BorderBrush="#EEE" BorderThickness="1" CornerRadius="6">
+                <TextBlock Foreground="#444" Text="{Binding FooterStatus}" />
+            </Border>
+        </Grid>
+
+        <!-- Operation Page -->
+        <Grid Visibility="{Binding IsOperationPage, Converter={StaticResource BoolToVis}}">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <Border Grid.Row="0" BorderBrush="#DDD" BorderThickness="1" CornerRadius="6" Padding="10">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="1.3*"/>
                         <ColumnDefinition Width="1.2*"/>
                     </Grid.ColumnDefinitions>
 
-                    <DataGrid Grid.Column="0"
-                              ItemsSource="{Binding Parameters}"
-                              SelectedItem="{Binding SelectedParameter}"
-                              AutoGenerateColumns="False"
-                              IsReadOnly="True"
-                              CanUserAddRows="False"
-                              HeadersVisibility="Column"
-                              GridLinesVisibility="Horizontal"
-                              RowHeaderWidth="0">
-                        <DataGrid.Columns>
-                            <DataGridTextColumn Header="Address" Binding="{Binding AddressHex}" Width="90"/>
-                            <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="*"/>
-                            <DataGridTextColumn Header="Access" Binding="{Binding Access}" Width="90"/>
-                            <DataGridTextColumn Header="Unit" Binding="{Binding Unit}" Width="120"/>
-                            <DataGridTextColumn Header="Last (Dec)" Binding="{Binding LastValueDec}" Width="110"/>
-                            <DataGridTextColumn Header="Last (Hex)" Binding="{Binding LastValueHex}" Width="110"/>
-                        </DataGrid.Columns>
-                    </DataGrid>
+                    <StackPanel Grid.Column="0" Orientation="Vertical">
+                        <TextBlock FontSize="16" FontWeight="SemiBold" Text="Quick Control"/>
+                        <WrapPanel Margin="0,8,0,0">
+                            <Button Width="120" Content="Start" Command="{Binding StartCommand}" />
+                            <Button Width="120" Margin="10,0,0,0" Content="Stop" Command="{Binding StopCommand}" />
+                        </WrapPanel>
+                        <WrapPanel Margin="0,8,0,0">
+                            <Button Width="250" Content="Shutdown (Write 1 @0x000B)" Command="{Binding ShutdownCommand}" />
+                        </WrapPanel>
 
-                    <Border Grid.Column="1" Margin="12,0,0,0" BorderBrush="#DDD" BorderThickness="1" CornerRadius="6" Padding="10">
-                        <StackPanel>
-                            <TextBlock FontSize="16" FontWeight="SemiBold" Text="Selected"/>
-                            <TextBlock Margin="0,8,0,0" Text="{Binding SelectedParameter.AddressHex}" FontFamily="Consolas"/>
-                            <TextBlock Text="{Binding SelectedParameter.Name}" TextWrapping="Wrap" Margin="0,4,0,0"/>
-                            <TextBlock Text="{Binding SelectedParameter.Description}" TextWrapping="Wrap" Margin="0,8,0,0" Foreground="#444"/>
+                        <Border Margin="0,10,0,0" BorderBrush="#EEE" BorderThickness="1" Padding="8" CornerRadius="6">
+                            <StackPanel>
+                                <TextBlock FontWeight="SemiBold" Text="Set Speed Command (0x000A)"/>
+                                <WrapPanel Margin="0,6,0,0">
+                                    <TextBlock Text="Raw U16:" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                    <TextBox Width="90" Text="{Binding SpeedRawU16}" />
+                                    <Button Margin="10,0,0,0" Width="120" Content="Write" Command="{Binding SetSpeedCommand}" />
+                                </WrapPanel>
+                                <TextBlock Margin="0,6,0,0" Foreground="#666"
+                                           Text="Raw value is 2 bytes. If you want scaling (0.01Hz), we can add later once confirmed."/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
 
-                            <WrapPanel Margin="0,10,0,0">
-                                <Button Width="120" Content="Read" Command="{Binding ReadSelectedCommand}" />
-                                <Button Width="120" Margin="10,0,0,0" Content="Write" Command="{Binding WriteSelectedCommand}" />
-                            </WrapPanel>
-
-                            <WrapPanel Margin="0,10,0,0">
-                                <TextBlock Text="Write U16:" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                                <TextBox Width="120" Text="{Binding SelectedWriteValueU16}" />
-                            </WrapPanel>
-
-                            <TextBlock Margin="0,10,0,0" Foreground="#666" Text="Write is blocked if Access=RO."/>
-                        </StackPanel>
-                    </Border>
+                    <StackPanel Grid.Column="1" Orientation="Vertical" Margin="14,0,0,0">
+                        <TextBlock FontSize="16" FontWeight="SemiBold" Text="Operation"/>
+                        <WrapPanel Margin="0,8,0,0">
+                            <CheckBox Content="Enable polling" IsChecked="{Binding PollEnabled}" />
+                        </WrapPanel>
+                        <WrapPanel Margin="0,10,0,0">
+                            <Button Width="160" Content="Back to Settings" Command="{Binding ReturnToSettingsCommand}" />
+                        </WrapPanel>
+                    </StackPanel>
                 </Grid>
-            </TabItem>
+            </Border>
 
-            <TabItem Header="Console Log">
-                <Grid Margin="10">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="*"/>
-                    </Grid.RowDefinitions>
+            <TabControl Grid.Row="1" Margin="0,12,0,0">
+                <TabItem Header="Polling Parameters">
+                    <Grid Margin="10">
+                        <DataGrid ItemsSource="{Binding PollingParametersView}"
+                                  AutoGenerateColumns="False"
+                                  IsReadOnly="False"
+                                  CanUserAddRows="False"
+                                  HeadersVisibility="Column"
+                                  GridLinesVisibility="Horizontal"
+                                  RowHeaderWidth="0">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Address" Binding="{Binding AddressHex}" Width="90" IsReadOnly="True"/>
+                                <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="*" IsReadOnly="True"/>
+                                <DataGridTemplateColumn Header="Action" Width="120">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <ComboBox ItemsSource="{Binding Source={StaticResource ActionTypes}}"
+                                                      SelectedItem="{Binding PollAction, Mode=TwoWay}" />
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                                <DataGridTextColumn Header="Poll (ms)" Binding="{Binding PollIntervalMs}" Width="90"/>
+                                <DataGridTextColumn Header="Write U16" Binding="{Binding WriteValueU16}" Width="120"/>
+                                <DataGridTextColumn Header="Last (Dec)" Binding="{Binding LastValueDec}" Width="110" IsReadOnly="True"/>
+                                <DataGridTextColumn Header="Last (Hex)" Binding="{Binding LastValueHex}" Width="110" IsReadOnly="True"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Grid>
+                </TabItem>
 
-                    <WrapPanel Grid.Row="0">
-                        <Button Content="Open log folder" Command="{Binding OpenLogFolderCommand}" />
-                        <TextBlock Margin="10,0,0,0" VerticalAlignment="Center" Foreground="#666" Text="{Binding CurrentLogFileHint}"/>
-                    </WrapPanel>
+                <TabItem Header="Single Parameters">
+                    <Grid Margin="10">
+                        <DataGrid ItemsSource="{Binding SingleParametersView}"
+                                  AutoGenerateColumns="False"
+                                  IsReadOnly="False"
+                                  CanUserAddRows="False"
+                                  HeadersVisibility="Column"
+                                  GridLinesVisibility="Horizontal"
+                                  RowHeaderWidth="0">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Address" Binding="{Binding AddressHex}" Width="90" IsReadOnly="True"/>
+                                <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="*" IsReadOnly="True"/>
+                                <DataGridTemplateColumn Header="Action" Width="120">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <ComboBox ItemsSource="{Binding Source={StaticResource ActionTypes}}"
+                                                      SelectedItem="{Binding SingleAction, Mode=TwoWay}" />
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                                <DataGridTextColumn Header="Write U16" Binding="{Binding WriteValueU16}" Width="120"/>
+                                <DataGridTextColumn Header="Last (Dec)" Binding="{Binding LastValueDec}" Width="110" IsReadOnly="True"/>
+                                <DataGridTextColumn Header="Last (Hex)" Binding="{Binding LastValueHex}" Width="110" IsReadOnly="True"/>
+                                <DataGridTemplateColumn Header="Send" Width="90">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Button Content="Send"
+                                                    Command="{Binding DataContext.ExecuteSingleCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                    CommandParameter="{Binding}" />
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Grid>
+                </TabItem>
 
-                    <DataGrid Grid.Row="1" Margin="0,10,0,0"
-                              ItemsSource="{Binding LogEntries}"
-                              AutoGenerateColumns="False"
-                              IsReadOnly="True"
-                              CanUserAddRows="False"
-                              HeadersVisibility="Column"
-                              GridLinesVisibility="Horizontal"
-                              RowHeaderWidth="0">
-                        <DataGrid.Columns>
-                            <DataGridTextColumn Header="Time" Binding="{Binding TimeLocal}" Width="160"/>
-                            <DataGridTextColumn Header="Dir" Binding="{Binding Direction}" Width="60"/>
-                            <DataGridTextColumn Header="RTT(ms)" Binding="{Binding RttMs}" Width="80"/>
-                            <DataGridTextColumn Header="HEX" Binding="{Binding Hex}" Width="380"/>
-                            <DataGridTextColumn Header="Parsed" Binding="{Binding Parsed}" Width="*"/>
-                            <DataGridTextColumn Header="Result" Binding="{Binding Result}" Width="120"/>
-                        </DataGrid.Columns>
-                    </DataGrid>
-                </Grid>
-            </TabItem>
-        </TabControl>
+                <TabItem Header="Console Log">
+                    <Grid Margin="10">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
 
-        <!-- Bottom status -->
-        <Border Grid.Row="2" Margin="0,10,0,0" Padding="8" BorderBrush="#EEE" BorderThickness="1" CornerRadius="6">
-            <TextBlock Foreground="#444" Text="{Binding FooterStatus}" />
-        </Border>
+                        <WrapPanel Grid.Row="0">
+                            <Button Content="Open log folder" Command="{Binding OpenLogFolderCommand}" />
+                            <TextBlock Margin="10,0,0,0" VerticalAlignment="Center" Foreground="#666" Text="{Binding CurrentLogFileHint}"/>
+                        </WrapPanel>
+
+                        <DataGrid Grid.Row="1" Margin="0,10,0,0"
+                                  ItemsSource="{Binding LogEntries}"
+                                  AutoGenerateColumns="False"
+                                  IsReadOnly="True"
+                                  CanUserAddRows="False"
+                                  HeadersVisibility="Column"
+                                  GridLinesVisibility="Horizontal"
+                                  RowHeaderWidth="0">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Time" Binding="{Binding TimeLocal}" Width="160"/>
+                                <DataGridTextColumn Header="Dir" Binding="{Binding Direction}" Width="60"/>
+                                <DataGridTextColumn Header="RTT(ms)" Binding="{Binding RttMs}" Width="80"/>
+                                <DataGridTextColumn Header="HEX" Binding="{Binding Hex}" Width="380"/>
+                                <DataGridTextColumn Header="Parsed" Binding="{Binding Parsed}" Width="*"/>
+                                <DataGridTextColumn Header="Result" Binding="{Binding Result}" Width="120"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Grid>
+                </TabItem>
+            </TabControl>
+
+            <Border Grid.Row="2" Margin="0,10,0,0" Padding="8" BorderBrush="#EEE" BorderThickness="1" CornerRadius="6">
+                <TextBlock Foreground="#444" Text="{Binding FooterStatus}" />
+            </Border>
+        </Grid>
     </Grid>
 </Window>
